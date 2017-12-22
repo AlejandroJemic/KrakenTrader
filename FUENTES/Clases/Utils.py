@@ -4,7 +4,7 @@ import traceback
 import threading
 import sys
 
-logging.basicConfig(filename="LogEventos.log", level=logging.DEBUG)
+logging.basicConfig(filename="../../LOGs/LogEventos.log", level=logging.DEBUG)
 
 def LogEvent(msg,isError = False):
     msg = '[' + threading.currentThread().getName() + ']: ' + msg 
