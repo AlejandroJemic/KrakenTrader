@@ -81,16 +81,17 @@ class OpenCloseValues:
     '''
     volPriceOpen  = 50000          # monto en moneda que debe mover moverse para abir una operacion
     chOpen = 0.4                   # % de cambio para abrir una operacion
-    mbOpen = 1.05                   # indicador BalanceHistory.unbalance para abrir una operacion
-    deltaCHObjetivo = 20            # % cambio objetibo, lo se que espera ganar
+    mbOpen = 1.05                  # indicador BalanceHistory.unbalance para abrir una operacion
+    deltaCHObjetivo = 20           # % cambio objetibo, lo se que espera ganar
     chClose = 1                    # % cambio para corte de perdidas si se alcanso la base
-    deltaTotalLoseCH = 0.5         # % cambio para corde de perdidas si no se alcanso la base
+    deltaTotalLoseCH = 0.5           # % cambio para corde de perdidas si no se alcanso la base
     waitPeriods = 60               # cuando la operacion esta abierta y se alcanso la base, se espera periodos=waitPeriods * waitFactor
     waitFactor = 48
     waitPeriodsOutBase = 60        # cuando la operacion esta abierta fuera de base, se espera periodos=waitPeriodsOutBase * waitFactorOutBase
     waitFactorOutBase = 3
-    cumCHIncrement = 2.6           # % de cambio acumuladoa para apertura de operacion si existe tendencia positiva lenta
-    deltaCHSaveProfit = 9.0          # % de cambio acumulada que marga un cierre y reapertura de la operacion para salvar ganancias
+    cumCHIncrement = 3.5           # % de cambio acumuladoa para apertura de operacion si existe tendencia positiva lenta
+    deltaCHSaveProfit = 9          # % de cambio acumulada que marga un cierre y reapertura de la operacion para salvar ganancias
+    UpTrendWaitPeriods = 20        # cantidad de periodos a esperar para abrir  por  tendencia en alsa
     
 ##################################################################################################################3
 #    class TradeEvaluator:                                                                      ##################3
@@ -159,7 +160,7 @@ class TradeEvaluator:
             pini = 0 
             pfin = len(bh)-1
             isUpTrend = False
-            if ((pfin - pini) >= 60):
+            if ((pfin - pini) >= OCV.UpTrendWaitPeriods):
                 bh['change'] = bh['close'].pct_change(periods=1)*100
                 ch = bh['change']
                 bh['cum_change'] = bh['change'].cumsum()
@@ -200,19 +201,20 @@ class TradeEvaluator:
 
         if pOpenCloseValues != None:
             OCV = pOpenCloseValues
-        
-        print('volPriceOpen ' + str(OCV.volPriceOpen))
-        print('chOpen ' + str(OCV.chOpen))
-        print('mbOpen ' + str(OCV.mbOpen))
-        print('deltaCHObjetivo ' + str(OCV.deltaCHObjetivo))
-        print('chClose ' + str(OCV.chClose))
-        print('deltaTotalLoseCH ' + str(OCV.deltaTotalLoseCH))
-        print('waitPeriods ' + str(OCV.waitPeriods))
-        print('waitFactor ' + str(OCV.waitFactor))
+        print('EMPLEANDO LOS SIGUIETNES PARAMETROS:')
+        print('volPriceOpen       ' + str(OCV.volPriceOpen))
+        print('chOpen             ' + str(OCV.chOpen))
+        print('mbOpen             ' + str(OCV.mbOpen))
+        print('deltaCHObjetivo    ' + str(OCV.deltaCHObjetivo))
+        print('chClose            ' + str(OCV.chClose))
+        print('deltaTotalLoseCH   ' + str(OCV.deltaTotalLoseCH))
+        print('waitPeriods        ' + str(OCV.waitPeriods))
+        print('waitFactor         ' + str(OCV.waitFactor))
         print('waitPeriodsOutBase ' + str(OCV.waitPeriodsOutBase))
-        print('waitFactorOutBase ' + str(OCV.waitFactorOutBase))
-        print('cumCHIncrement ' + str(OCV.cumCHIncrement))
-        print('deltaCHSaveProfit ' + str(OCV.deltaCHSaveProfit))
+        print('waitFactorOutBase  ' + str(OCV.waitFactorOutBase))
+        print('cumCHIncrement     ' + str(OCV.cumCHIncrement))
+        print('deltaCHSaveProfit  ' + str(OCV.deltaCHSaveProfit))
+        print('UpTrendWaitPeriods ' + str(OCV.UpTrendWaitPeriods))
 
         # valores generales
         deltabaseCH = self.deltabaseCH                       # % para cubrir gastos operacionales por compra venta
@@ -229,7 +231,7 @@ class TradeEvaluator:
         T = TradeValues()
 
         #  pIsBackTest = True:
-        DBA.dbMyTradesTable = 'MyTradesBackTest'
+        DBA.dbMyTradesTable = 'MyTrades'
         DBA.CreateAllTables()
         DBA.MytradesDeleteAll()     # borra la tabla para reprocesar
         T = TradeValues()
@@ -248,7 +250,7 @@ class TradeEvaluator:
                     T = self.EvalauteSaveProfit(T, OCV, DBA, s, deltaTargetCH,  deltaStopLose, bh, tc, cumch, i)
                     
                     if (T.isOpen == False) or ((i == len(s)-1) & (T.isOpen == True)): #si cerro operacion o es el ultimo periodo y alguna operacion sigue abierta
-                        print(T.idTrade)
+
                         self.CloseTrade(T, s, bh, tc, i, DBA)
         #end For
         
@@ -258,7 +260,6 @@ class TradeEvaluator:
         mt = DBA.ReadMyTrades()
         print('Total Trades: {0}'.format(len(mt)))
         return mt
-
 
     ##################################################################################################################3
 
@@ -373,6 +374,7 @@ class TradeEvaluator:
         '''
         establese los valores en la  apertura de una operacion
         '''
+        T.isOpen = True
         T.openPos = i
         T.idTrade = lastIdTrade + 1
         T.sDesc = '({0}) {1}'.format(T.idTrade, T.sOpenCond)
@@ -445,6 +447,8 @@ class TradeEvaluator:
 
             #ejecuta cierre y repartura
             T = self.CloseTrade(T, s, bh, tc, i, DBA)
+            T.sOpenCond = 'REOPEN TREND UP'
+            T.OpeningTypeID = 7
             T = self.OpenTrade(OCV, DBA , T, tc, s, cumch, deltaTargetCH, deltaStopLose, i)
         return T
 
@@ -524,7 +528,7 @@ class TradeEvaluator:
         '''
         agrega una operacion cerrada a la lista de operacioens calculadas
         '''
-        DBA.MytradesInsertOne(T)
+        DBA.MytradesInsertOne(T, DBA.dbMyTradesTable)
         
     def UpdateClosedTread(self, T, DBA):
         '''

@@ -180,7 +180,7 @@ def ConultarOnline():
                 #solicitar datos
                 kapi = k.API()
                 response = kapi.query_public('Trades',tradesQuery)
-                tikerResponce = kapi.query_public('Ticker', {'pair': 'XXBTZUSD'})
+                tikerResponce = kapi.query_public('Ticker', tradesQuery)
                 #<price>, <volume>, <time>, <buy/sell>, <market/limit>, <miscellaneous>
                 # check error y extraer datos
                 error = response['error']

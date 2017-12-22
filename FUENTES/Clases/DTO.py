@@ -44,7 +44,6 @@ class TradesHistory(Base):
 
 
 class MyTrades(Base):
-
     __tablename__ = 'MyTrades'
     index = Column(Integer, primary_key=True)
     id = Column(BigInteger)

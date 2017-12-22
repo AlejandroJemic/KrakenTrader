@@ -226,14 +226,14 @@ class DBAdapter:
         finally:
             session.close()
 
-    def MytradesInsertOne(self, oTradeValues):
+    def MytradesInsertOne(self, oTradeValues, tableName):
         '''
         inserta una fila en la tabla MyTrades a partir d eun objeto TradeValues por medio de SQLalchemy
         '''
         Session = sessionmaker(bind=self.engine)
         session = Session()
         try:
-            newTrade = MyTrades(oTradeValues, self.dbMyTradesTable)
+            newTrade = MyTrades(oTradeValues, tableName)
             session.add(newTrade)
             session.commit()
         except SQLAlchemyError as e:
