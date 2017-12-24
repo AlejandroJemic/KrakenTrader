@@ -22,3 +22,9 @@ def PassTime(d1, d2):
     #d1 = datetime.strptime(d1, "%Y-%m-%d %H:%M:%S")
     #d2 = datetime.strptime(d2, "%Y-%m-%d %H:%M:%S")
     return abs((d2 - d1).seconds)
+
+
+def LogObjectValues(obj, msg=''):
+    for attr, value in obj.__dict__.iteritems():
+        LogEvent(msg)
+        LogEvent( '{a}:    {v}'.format(str(sattr), str(value)))

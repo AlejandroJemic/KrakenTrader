@@ -396,7 +396,6 @@ class TradeEvaluator:
         T.TotalLoseP  = T.openingP * ((100-OCV.deltaTotalLoseCH)/100)
         
         # reset closing values
-        T.sDesc       = ''
         T.closeTime   = datetime(1900, 1, 1, 0, 0, 0)
         T.closingCH   = 0.0
         T.closingP    = 0.0
@@ -405,6 +404,9 @@ class TradeEvaluator:
         T.deltaP      = 0.0
         T.sCloseCond  = ''
         T.ClosingTypeID = 0
+
+        LogObjectValues(T, 'Trade Abierto')
+
         return T
         
     def EvaluateClosing(self, T, OCV, s, deltaStopLose, bh,  cumch, i):
@@ -413,7 +415,6 @@ class TradeEvaluator:
         '''
         if bh.cum_change[i] >= T.baseCH: #nivel de perdidas operacionales superado
             T.inBase = True
-        LogEvent('inBase: ' + str(T.inBase))
         if T.inBase == True:
             currentCumCH = cumch[i] -  T.openingCH
             T.maximo = self.obtenerMaximo(T.maximo,currentCumCH)
@@ -459,8 +460,6 @@ class TradeEvaluator:
         '''
         LogEvent('Evalaute Save Profit')
         currentCumCH = cumch[i] -  T.openingCH
-        LogEvent('T.isOpen: ' +  str(T.isOpen))
-        LogEvent('OCV.deltaCHSaveProfit ' + str(OCV.deltaCHSaveProfit))
         if  (T.isOpen == True) &  (currentCumCH >= OCV.deltaCHSaveProfit):
             LogEvent('saving profit')
             T.maximo = self.obtenerMaximo(T.maximo,currentCumCH)
@@ -481,9 +480,17 @@ class TradeEvaluator:
         Encapsula las acciones realizadas al abrir una operacionales
         retorna un objeto del tipo TradeValues seteado con nuevos parametros operacionales (igual apertura nueva)
         '''
+        LogEvent('Opening Trade')
+        sOpenCond = T.sOpenCond
+        OpeningTypeID = T.OpeningTypeID
+
         T = None
         del T
         T = TradeValues()
+
+        T.sOpenCond = sOpenCond        
+        T.OpeningTypeID = OpeningTypeID
+
         T = self.SetOpening(OCV, T, tc, s, cumch, deltaTargetCH, deltaStopLose, Evalpos, self.lastIdTrade)
         self.sAction = self.sAction + '. Trade Opened'
         self.iAction = 2
@@ -531,6 +538,7 @@ class TradeEvaluator:
         else:
             T.deltaCH      = T.closingCH - T.openingCH
             T.deltaP       = T.closingP - T.openingP
+        LogObjectValues(T, 'Trade Cerrado')
         return T
         
     def CalcularMaximoTolerado(self, T, OCV, deltaStopLose):

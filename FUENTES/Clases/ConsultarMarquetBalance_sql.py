@@ -259,10 +259,7 @@ def ConultarOnline():
                         BalanceHistory.loc[len(BalanceHistory)] = newBalance
                     else:
                         LogEvent(errorTiker,True)
-                        Lock.release()
-                        LogEvent('waiting 5s...')
-                        time.sleep(5)
-
+                        
                     BalanceHistory = BalanceHistory.set_index(pd.DatetimeIndex(BalanceHistory['Time']))
                     BalanceHistory.drop('Time', axis=1,inplace=True)
                     BalanceHistory.to_sql(dbBalanceHistoryTable,engine, if_exists='append')
@@ -280,12 +277,10 @@ def ConultarOnline():
                     Lock.release()
                 else:
                     LogEvent(error + errorTiker, True)
-                    Lock.release()
                     LogEvent('waiting 5s...')
                     time.sleep(5)
             except:
                 LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
-                
                 LogEvent('waiting 5s...')
                 time.sleep(5)
                 continue
