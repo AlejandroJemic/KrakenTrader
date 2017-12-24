@@ -13,7 +13,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from DTO import MyTrades
 from TradeEvaluator import TradeValues
 import os
-
+from Utils import *
 
 
 path = os.getcwd()
@@ -32,6 +32,8 @@ class DBAdapter:
     dbTradesHistoryTable = 'TradesHistory'
     dbMyTradesTable = 'MyTrades'
     dbTradesCondensationTable = 'TradesCondensation'
+    dbOrdersTable = 'Orders'
+    dbOrdersHistoryTable = 'OrdersHistory'
 
     startSampleTime = None     # desde
     EndSampleTime = None     # hasta
@@ -144,11 +146,66 @@ class DBAdapter:
                      Column('price', Float, nullable=True),
                      Column('countb', Float, nullable=True),
                      Column('volb', Float, nullable=True),
-                     Column('counts', Float, nullable=True),
+                     Column('counts', Float, nullable=True), # 
                      Column('vols', Float, nullable=True))
             # Implement the creation
             metadata.create_all()
-            print('creada la table' + self.dbTradesCondensationTable)
+            print('creada la tabla' + self.dbTradesCondensationTable)
+
+        if not self.engine.dialect.has_table(self.engine, self.dbOrdersTable):  # If table don't exist, Create.
+            metadata = MetaData(self.engine)
+            Table(self.dbOrdersTable, metadata,
+                Column('idTrade', Integer, nullable=False),     # Id del trade al que coresponden
+                Column('idOrder', Integer, nullable=False),      # Id local de la orden 
+                Column('OrderTime', DateTime, nullable=False),   # fecha hora de ingreso al sistema
+                Column('AgentCode', String, nullable=True),      # agente al que coresponden
+                Column('CoinCode', String, nullable=True),       # cryptomoneda a la que coresponden
+                Column('ClosingPrice', Float, nullable=True),    # precio considerado en el envio
+                Column('Vol', Float, nullable=True),             # volumen en la moneda de la orden
+                Column('PriceVolValue', Float, nullable=True),   # valor  CALCULADO orden(precio crypto/USD * volumen a ejecurar, segun el precio considerado)
+                Column('ComisionPersent', Float, nullable=True), # % comicion calculado
+                Column('ComisionAmount', Float, nullable=True),  # USD comicion calculada
+                Column('idOrderAgent', String, nullable=True),      # Id asignado por el agente 
+                Column('OrderTimeAgent', DateTime, nullable=True),  # fecha hora de confirmacion
+                Column('ClosingPriceAgent', Float, nullable=True),  # precio confirmado por el agente al cual se ejecuto
+                Column('VolAgent', Float, nullable=True),           # volumen ejecutado por el agente
+                Column('PriceVolValueAgent', Float, nullable=True), # valor  EJECUTADO orden(precio crypto/USD ejc * volumen a ejecutado, segun el precio informado por el egente)
+                Column('ComisionPersent', Float, nullable=True),    # % comicion  informado
+                Column('ComisionAmountAgent', Float, nullable=True),# USD comicion informado
+                Column('SpreadComisionPersent', Float, nullable=True),  # spread % comicion
+                Column('SpreadComisionAmount', Float, nullable=True),   # spread USD ajecucion
+                Column('SpreadPriceVolValue', Float, nullable=True),    # spread valor calculado - Valor Ejcuctado
+                Column('DelayTime', DateTime, nullable=True),           # deley ejecucion (en segundos) 
+                Column('IsConditional', Integer, nullable=True),     # flag es inmediata o condicional
+                Column('OrderType', Integer, nullable=True),         # tipo de orden: compra market, compra limit/datelimit , venta, market, venta limit/datelimit , stoplost, totallost, salvarganancia, 
+                Column('OrderState', Integer, nullable=True),        # estado de la orden
+                Column('PrevState', Integer, nullable=True),         # estado anterior
+                Column('OrderStateTime', DateTime, nullable=True),   # fecha ultimo estado
+                Column('PrevStateTime', DateTime, nullable=True),    # fecha estado anterior
+                Column('CancelationTime', DateTime, nullable=True),  # fecha hora de cancelacion de la orden
+                Column('CancelationDesc', DateTime, nullable=True))  # motivo de cancelacion descriptivo
+            # Implement the creation
+            metadata.create_all()
+            print('creada la tabla' + self.dbOrdersTable)
+
+        if not self.engine.dialect.has_table(self.engine, self.dbOrdersHistoryTable):  # If table don't exist, Create.
+            metadata = MetaData(self.engine)
+            Table(self.dbOrdersHistoryTable, metadata,
+                Column('idTrade', Integer, nullable=True),     # Id del trade al que coresponde
+                Column('idOrder', Integer, nullable=True),     # Id local de la orden 
+                Column('idOrderAgent', String, nullable=True), # id asignado por el agente ( si existe)
+                Column('AgentCode', String, nullable=True),    # Broker corespondiente
+                Column('CoinCode', String, nullable=True),     # Cryptomoneda
+                Column('OrderState', Integer, nullable=True),      # id estado
+                Column('OrderStateTime', DateTime, nullable=True), # fecha hora del ultimo estado
+                Column('PrevState', Integer, nullable=True),       # id estado anterior
+                Column('PrevStateTime', DateTime, nullable=True),  # fecha ora estado anterior
+                Column('StateChangeMotive', String, nullable=True), # motivo del cambio de estado
+                Column('SentJson', Float, nullable=True),           # json enviado
+                Column('ResivedJson', Float, nullable=True))        # json recivido
+            # Implement the creation
+            metadata.create_all()
+            print('creada la tabla' + self.dbOrdersHistoryTable)
 
     def ReadBalanceHistory(self, startSampleTime=None, EndSampleTime=None):
         '''

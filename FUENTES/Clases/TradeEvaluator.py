@@ -25,6 +25,7 @@ from pathlib import Path
 import sys
 from datetime import datetime, timedelta
 from DTO import MyTrades
+from Utils import *
 
 ##################################################################################################################3
 #    class TradeValues:                                                                         ##################3
@@ -90,7 +91,7 @@ class OpenCloseValues:
     waitPeriodsOutBase = 60        # cuando la operacion esta abierta fuera de base, se espera periodos=waitPeriodsOutBase * waitFactorOutBase
     waitFactorOutBase = 3
     cumCHIncrement = 3.5           # % de cambio acumuladoa para apertura de operacion si existe tendencia positiva lenta
-    deltaCHSaveProfit = 9          # % de cambio acumulada que marga un cierre y reapertura de la operacion para salvar ganancias
+    deltaCHSaveProfit =  8         # % de cambio acumulada que marga un cierre y reapertura de la operacion para salvar ganancias
     UpTrendWaitPeriods = 20        # cantidad de periodos a esperar para abrir  por  tendencia en alsa
     
 ##################################################################################################################3
@@ -298,34 +299,37 @@ class TradeEvaluator:
         
         T = TradeValues()
 
-        # pIsBackTest = False:
-        DBA.dbMyTradesTable = 'MyTrades'
-        Evalpos = len(s) -1    # inicia en el ultipo periodo para evaluar solo el momento actual(presupone corriendo online), 
-        T = self.ReadLastTrade(s, DBA) # lee ultimo trade creado
-        self.sAction  ='Find last trade: ' + str(T.idTrade)
-        if T.idTrade == 0:
-            T = TradeValues() 
-            self.sAction  = 'No trades in DDBB'
-        if Evalpos > 12:
-            if (T.isOpen == False):
-                if Evalpos < len(tc):
-                    self.sAction  = self.sAction + '. Evaluating opening'
-                    self.iAction = 1
-                    T = self.EvaluateOpening(T, OCV, s,sma03, sma12, volb, bh, tc, Evalpos)
-                if T.isOpen == True:
-                    
-                    T = self.OpenTrade(OCV, DBA , T, tc, s, cumch, deltaTargetCH, deltaStopLose, Evalpos)
-                    
-            if (T.isOpen == True):
-                self.sAction = self.sAction + '. Evaluating Closing'
-                self.iAction = 4
-                T = self.EvaluateClosing(T, OCV, s, deltaStopLose, bh,  cumch, Evalpos)
-                
-                T = self.EvalauteSaveProfit(T, OCV, DBA, s, deltaTargetCH,  deltaStopLose, bh, tc, cumch, Evalpos)
+        try:
+            # pIsBackTest = False:
+            DBA.dbMyTradesTable = 'MyTrades'
+            Evalpos = len(s) -1    # inicia en el ultipo periodo para evaluar solo el momento actual(presupone corriendo online), 
+            T = self.ReadLastTrade(s, DBA) # lee ultimo trade creado
+            self.sAction  ='Find last trade: ' + str(T.idTrade)
+            if T.idTrade == 0:
+                T = TradeValues() 
+                self.sAction  = 'No trades in DDBB'
+            if Evalpos > 12:
+                if (T.isOpen == False):
+                    if Evalpos < len(tc):
+                        self.sAction  = self.sAction + '. Evaluating opening'
+                        self.iAction = 1
+                        T = self.EvaluateOpening(T, OCV, s,sma03, sma12, volb, bh, tc, Evalpos)
+                    if T.isOpen == True:
+                        
+                        T = self.OpenTrade(OCV, DBA , T, tc, s, cumch, deltaTargetCH, deltaStopLose, Evalpos)
+                        
+                if (T.isOpen == True):
+                    self.sAction = self.sAction + '. Evaluating Closing'
+                    self.iAction = 4
+                    T = self.EvaluateClosing(T, OCV, s, deltaStopLose, bh,  cumch, Evalpos)
 
-                if (T.isOpen == False): #si cerro operacion
-                    self.CloseTrade(T, s, bh, tc, Evalpos, DBA)
+                    if (T.isOpen == False): #si cerro operacion
+                        self.CloseTrade(T, s, bh, tc, Evalpos, DBA)
 
+                    T = self.EvalauteSaveProfit(T, OCV, DBA, s, deltaTargetCH,  deltaStopLose, bh, tc, cumch, Evalpos)
+        except:
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
+            raise
         return self.sAction , self.iAction
 
     ##################################################################################################################3
@@ -390,7 +394,7 @@ class TradeEvaluator:
         T.baseP = T.openingP * ((100+self.deltabaseCH)/100)
         T.targetP = T.openingP * ((100+deltaTargetCH)/100)
         T.stopLoseP = T.openingP * ((100+deltaStopLose)/100)
-        T.TotalLoseP = T.openingP * ((100+OCV.deltaTotalLoseCH)/100)
+        T.TotalLoseP = T.openingP * ((100-OCV.deltaTotalLoseCH)/100)
         
         return T
         
@@ -400,36 +404,43 @@ class TradeEvaluator:
         '''
         if bh.cum_change[i] >= T.baseCH: #nivel de perdidas operacionales superado
             T.inBase = True
-        if T.inBase == True: 
+        LogEvent('inBase: ' + str(T.inBase))
+        if T.inBase == True:
             currentCumCH = cumch[i] -  T.openingCH
             T.maximo = self.obtenerMaximo(T.maximo,currentCumCH)
-            
             T.maximoTolerado = self.CalcularMaximoTolerado(T,OCV, deltaStopLose)
-
+            LogEvent('currentCumCH: ' + str(currentCumCH))
+            LogEvent('maximo: ' + str(T.maximo))
+            LogEvent('maximoTolerado: '  + str(T.maximoTolerado))
             if (currentCumCH <= T.maximoTolerado):
                 T.isOpen = False
                 T.sCloseCond = "Maximo AT {0} %CH, Tolerado AT {1} %CH".format(round(T.maximo,2), round(T.maximoTolerado,2))
                 T.ClosingTypeID = 1
-            
+                LogEvent('1')
+
             if cumch[i] <= (T.stopLoseCH): #cierre por stop lose
                 T.isOpen = False
                 T.sCloseCond = "STOP LOSE AT {0} %CH".format(round(deltaStopLose,2))
                 T.ClosingTypeID = 2
+                LogEvent('2')
             elif (i >= (T.openPos + OCV.waitPeriods*OCV.waitFactor)): #cierre por tiempo trascurrido sin logar objetivos
                 T.isOpen = False
                 T.sCloseCond = "elapsed {0} times without goals | IN BASE".format(OCV.waitPeriods*OCV.waitFactor)
                 T.ClosingTypeID = 3
+                LogEvent('3')
         
         else: #nivel de perdidas operacionales no se logro 
+            ('cumch[i] - T.TotalLoseCH: {0}'.format(cumch[i] - T.TotalLoseCH))
             if (s[i] <= 0) &(cumch[i] < T.TotalLoseCH): #cierre por perdida total
                 T.isOpen = False
                 T.sCloseCond = "TOTAL LOSE"
                 T.ClosingTypeID = 4
+                LogEvent('4')
             elif (i >= (T.openPos + OCV.waitPeriodsOutBase*OCV.waitFactorOutBase)): #cierre por tiempo trascurrido sin logar objetivos
                 T.isOpen = False
                 T.sCloseCond = "elapsed {0} times without goals | OUT BASE".format(OCV.waitPeriodsOutBase*OCV.waitFactorOutBase)
                 T.ClosingTypeID = 5
-        
+                LogEvent('5')
         return T
 
     def EvalauteSaveProfit(self, T, OCV, DBA, s, deltaTargetCH,  deltaStopLose, bh, tc, cumch, i):
@@ -437,8 +448,12 @@ class TradeEvaluator:
         Permite cerrar y reabrir una posicion para asegurar las ganancias 
         y continuar con la operacion, tiene la desbentaja de duplicar los gastos operativos tantas veses como se aplique la tecnica
         '''
+        LogEvent('Evalaute Save Profit')
         currentCumCH = cumch[i] -  T.openingCH
-        if (currentCumCH >= OCV.deltaCHSaveProfit):
+        LogEvent('T.isOpen: ' +  str(T.isOpen))
+        LogEvent('OCV.deltaCHSaveProfit ' + str(OCV.deltaCHSaveProfit))
+        if  (T.isOpen == True) &  (currentCumCH >= OCV.deltaCHSaveProfit):
+            LogEvent('saving profit')
             T.maximo = self.obtenerMaximo(T.maximo,currentCumCH)
             T.maximoTolerado = self.CalcularMaximoTolerado(T,OCV, deltaStopLose)
             T.isOpen = False
@@ -470,6 +485,7 @@ class TradeEvaluator:
         Encapsula las acciones realizadas al cerrer una operacionales
         retorna un objeto del tipo TradeValues nuevo
         '''
+        LogEvent('Closing Trade')
         T = self.SetClosing( T, s, bh, tc, Evalpos)
         self.sAction = self.sAction + '. Trade Closed'
         self.iAction = 5
@@ -510,15 +526,15 @@ class TradeEvaluator:
         calcula la tolerancia para cierre en caso de caida desde el maximo alcansado desde la apertura de la operacion
         '''
         if (T.maximo < OCV.deltaCHObjetivo):
-            if (T.maximo >= deltaStopLose) & (T.maximo < OCV.deltaCHObjetivo *0.25):  T.maximoTolerado = deltaStopLose    
+            if (T.maximo >= deltaStopLose) & (T.maximo < OCV.deltaCHObjetivo *0.25):  T.maximoTolerado = deltaStopLose
             elif (T.maximo >= OCV.deltaCHObjetivo *0.25) & (T.maximo < OCV.deltaCHObjetivo *0.5): T.maximoTolerado = deltaStopLose + 1.2
             elif (T.maximo >= OCV.deltaCHObjetivo *0.5) & (T.maximo < OCV.deltaCHObjetivo *0.75): T.maximoTolerado = deltaStopLose + 4.5
-            elif (T.maximo >= OCV.deltaCHObjetivo *0.75) & (T.maximo < OCV.deltaCHObjetivo): T.maximoTolerado = deltaStopLose + 6.5                    
+            elif (T.maximo >= OCV.deltaCHObjetivo *0.75) & (T.maximo < OCV.deltaCHObjetivo): T.maximoTolerado = deltaStopLose + 6.5
 
         else:
             if (T.maximo >= OCV.deltaCHObjetivo) & (T.maximo < OCV.deltaCHObjetivo *1.25):        T.maximoTolerado = OCV.deltaCHObjetivo * 0.9
             elif (T.maximo >= OCV.deltaCHObjetivo *1.25) & (T.maximo < OCV.deltaCHObjetivo *1.5):  T.maximoTolerado = OCV.deltaCHObjetivo * 1.1
-            elif (T.maximo >= OCV.deltaCHObjetivo *1.5)  & (T.maximo < OCV.deltaCHObjetivo *1.75): T.maximoTolerado = OCV.deltaCHObjetivo * 1.4      
+            elif (T.maximo >= OCV.deltaCHObjetivo *1.5)  & (T.maximo < OCV.deltaCHObjetivo *1.75): T.maximoTolerado = OCV.deltaCHObjetivo * 1.4
             elif (T.maximo >= OCV.deltaCHObjetivo *1.75) & (T.maximo < OCV.deltaCHObjetivo *2):    T.maximoTolerado = OCV.deltaCHObjetivo * 1.6
             elif (T.maximo >= OCV.deltaCHObjetivo *2)    & (T.maximo < OCV.deltaCHObjetivo *2.5):  T.maximoTolerado = OCV.deltaCHObjetivo *1.8
             elif (T.maximo >= OCV.deltaCHObjetivo *2.5): T.maximoTolerado = OCV.deltaCHObjetivo *2.1

@@ -174,6 +174,7 @@ def ConultarOnline():
     Lock = threading.Lock()
     if  engine.dialect.has_table(engine, dbBalanceHistoryTable) & engine.dialect.has_table(engine, dbTradesHistoryTable):
         while Ejecutar:
+            
             try:
                 BalanceHistory =pd.DataFrame(columns=BalanceColNames)
                 startTime = datetime.now() 
@@ -258,13 +259,13 @@ def ConultarOnline():
                         BalanceHistory.loc[len(BalanceHistory)] = newBalance
                     else:
                         LogEvent(errorTiker,True)
-                        time.sleep(5)
+                        Lock.release()
                         LogEvent('waiting 5s...')
+                        time.sleep(5)
 
                     BalanceHistory = BalanceHistory.set_index(pd.DatetimeIndex(BalanceHistory['Time']))
                     BalanceHistory.drop('Time', axis=1,inplace=True)
                     BalanceHistory.to_sql(dbBalanceHistoryTable,engine, if_exists='append')
-
                     if len(trades[trades['time'] > lastKnowTradeTime]) > 0:     
                         trades= trades[trades['time'] > lastKnowTradeTime]
                         lapTradesCount = len(trades)
@@ -279,14 +280,15 @@ def ConultarOnline():
                     Lock.release()
                 else:
                     LogEvent(error + errorTiker, True)
-                    time.sleep(5)
+                    Lock.release()
                     LogEvent('waiting 5s...')
+                    time.sleep(5)
             except:
                 LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
-                time.sleep(5)
+                
                 LogEvent('waiting 5s...')
+                time.sleep(5)
                 continue
-
             lapTime = datetime.now()
             LogEvent('waitng  60s...')
             t = espera -PassTime(startTime, lapTime)
@@ -295,6 +297,7 @@ def ConultarOnline():
             lapTime = datetime.now()
             LogEvent('elapsed {0} sec'.format(PassTime(startTime, lapTime)))
             i = i + 1
+
             
 ##########################################################################################################
 # MAIN
