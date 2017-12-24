@@ -201,8 +201,8 @@ class DBAdapter:
                 Column('PrevState', Integer, nullable=True),       # id estado anterior
                 Column('PrevStateTime', DateTime, nullable=True),  # fecha ora estado anterior
                 Column('StateChangeMotive', String, nullable=True), # motivo del cambio de estado
-                Column('SentJson', Float, nullable=True),           # json enviado
-                Column('ResivedJson', Float, nullable=True))        # json recivido
+                Column('SentJson', String, nullable=True),           # json enviado
+                Column('ResivedJson', String, nullable=True))        # json recivido
             # Implement the creation
             metadata.create_all()
             print('creada la tabla' + self.dbOrdersHistoryTable)

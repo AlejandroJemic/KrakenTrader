@@ -78,65 +78,98 @@ estados 3D, algun tipo de error
 
 39:   error generico en ejecucion de la orden, puede se en cualquier etapa
 
-
-============================================================
-las ordenes deben tener los sguientes datos:
-============================================================
-
-Id del trade al que coresponden
-Id local de la orden 
-fecha hora de ingreso al sistema
-
-agente al que coresponden
-cryptomoneda a la que coresponden
-precio considerado en el envio
-volumen en la moneda de la orden
-valor  CALCULADO orden(precio crypto/USD * volumen a ejecurar, segun el precio considerado)
-% comicion calculado
-USD comicion calculada
-Id asignado por el agente 
-
-fecha hora de confirmacion
-precio confirmado por el agente al cual se ejecuto
-volumen ejecutado por el agente
-valor  EJECUTADO orden(precio crypto/USD ejc * volumen a ejecutado, segun el precio informado por el egente)
-% comicion  informado
-USD comicion informado
-
-spread % comicion
-spread USD ajecucion
-sdread valor calculado - Valor Ejcuctado
-deley ejecucion (en segundos) 
-
-flag es inmediata o condicional
-tipo de orden: compra market, compra limit/datelimit , venta, market, venta limit/datelimit , stoplost, totallost, salvarganancia, 
-estado de la orden
-estado anterior
-fecha ultimo estado
-fecha estado anterior
-
-fecha hora de cancelacion de la orden
-motivo de cancelacion descriptivo
-
-
-============================================================
-los historiales de ordenes deben tener los sguientes datos:
-============================================================
-
-Id del trade al que coresponde
-Id local de la orden 
-id asignado por el agente ( si existe)
-Broker corespondiente
-Cryptomoneda
-
-id estado
-fecha hora del ultimo estado
-id estado anterior
-fecha ora estado anterior
-
-motivo del cambio de estado
-
-json enviado
-json recivido
-
 '''
+
+# ================================================================================================================
+# class OrderValues
+# ================================================================================================================
+class OrderValues:
+	idTrade               = 0                             # Integer      # Id del trade al que coresponden
+	idOrder               = 0                             # Integer      # Id local de la orden 
+	OrderTime             = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # fecha hora de ingreso al sistema
+	AgentCode             = 'KRAKEN'                      # String       # agente al que coresponden
+	CoinCode              = 'XBT'                         # String       # cryptomoneda a la que coresponden
+	ClosingPrice          = 0.0                           # Float        # precio considerado en el envio
+	Vol                   =  0.0                          # Float        # volumen en la moneda de la orden
+	PriceVolValue         = 0.0                           # Float        # valor  CALCULADO orden(precio crypto/USD * volumen a ejecurar, segun el precio considerado)
+	ComisionPersent       = 0.0                           # Float        # % comicion calculado
+	ComisionAmount        = 0.0                           # Float        # USD comicion calculada
+	idOrderAgent          = ""                            # String       # Id asignado por el agente 
+	OrderTimeAgent        = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # fecha hora de confirmacion
+	ClosingPriceAgent     = 0.0                           # Float        # precio confirmado por el agente al cual se ejecuto
+	VolAgent              = 0.0                           # Float        # volumen ejecutado por el agente
+	PriceVolValueAgent    = 0.0                           # Float        # valor  EJECUTADO orden(precio crypto/USD ejc * volumen a ejecutado, segun el precio informado por el egente)
+	ComisionPersent       = 0.0                           # Float        # % comicion  informado
+	ComisionAmountAgent   = 0.0                           # Float        # USD comicion informado
+	SpreadComisionPersent = 0.0                           # Float        # spread % comicion
+	SpreadComisionAmount  = 0.0                           # Float        # spread USD ajecucion
+	SpreadPriceVolValue   = 0.0                           # Float        # spread valor calculado - Valor Ejcuctado
+	DelayTime             = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # deley ejecucion (en segundos) 
+	IsConditional         = 0                             # Integer      # flag es inmediata o condicional
+	OrderType             = 0                             # Integer      # tipo de orden: compra market, compra limit/datelimit , venta, market, venta limit/datelimit , stoplost, totallost, salvarganancia, 
+	OrderState            = 0                             # Integer      # estado de la orden
+	PrevState             = 0                             # Integer      # estado anterior
+	OrderStateTime        = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # fecha ultimo estado
+	PrevStateTime         = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # fecha estado anterior
+	CancelationTime       = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # fecha hora de cancelacion de la orden
+	CancelationDesc       = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # motivo de cancelacion descriptivo
+
+# ================================================================================================================
+# class OrderHistoryValues
+# ================================================================================================================
+class OrderHistoryValues:
+	idTrade           = 0                             # Integer  # Id del trade al que coresponde
+	idOrder           = 0                             # Integer  # Id local de la orden 
+	idOrderAgent      = ''                            # String   # id asignado por el agente ( si existe)
+	AgentCode         = 'KRAKEN'                      # String   # Broker corespondiente
+	CoinCode          = 'XBT'                         # String   # Cryptomoneda
+	OrderState        = 0                             # Integer  # id estado
+	OrderStateTime    = datetime(1900, 1, 1, 0, 0, 0) # DateTime # fecha hora del ultimo estado
+	PrevState         = 0                             # Integer  # id estado anterior
+	PrevStateTime     = datetime(1900, 1, 1, 0, 0, 0) # DateTime # fecha ora estado anterior
+	StateChangeMotive = ''                            # String   # motivo del cambio de estado
+	SentJson          = 0.0                           # Float    # json enviado
+	ResivedJson       = 0.0                           # Float    # json recivido
+
+# ================================================================================================================
+# class OrderManager
+# ================================================================================================================
+
+from AgentManagers import *
+
+ class OrderManager:
+ 	SendOrdersEnabled = True # hablita o deshabilita el envio general de ordenes
+ 	AgentOrderManager = None # instancia del ordersManager corespondiente al agente
+
+def __init__(self, pAgentCode):
+	if pAgentCode == 'KRAKEN':
+		self.SendOrdersEnabled = True
+		self.AgentOrderManager = KRAKENOrderManager(self.SendOrdersEnabled)
+		self.AgentCode         = self.AgentOrderManager.AgentCode
+
+# considerar flag de interrumpion envio de ordenes al gente, ( no enviar mas compras, no enviar mas ventas independientes)
+def HabilitarEnvioOrdenes(pHabilitar = True):
+	self.SendOrdersEnabled = pHabilitar
+
+def EnviarOrden(self, OrderType):
+	if self.SendOrdersEnabled == True:
+		self.AgentOrderManager.EnviarOrden(OrderType)
+    	raise NotImplementedError("To be implemented")
+    return True
+
+# enviar orden de compra (market, limit, date limit)
+# enviar orden de stoplost (market)
+# enviar orden de totallost (market)
+# enviar orden de venta (market, limit, date limit)
+# enviar cancelacion de orden
+# cancelacionde emergencia de una o todas las ordenes ( por agente y criptomoneda, general)
+# consultar estado de ordenes al agente
+# si una orden es cancelada , se debe actualizar el estado del trade corespondiente segun coresponde
+# cuando la operacion entre en BASE, deve:
+# 	enviar y confirmar la cancelacion de la orden de TOTALLOST
+# 	enviar y confirmar la aplicacion de una nueva orden de STOPLOST
+# segurir estado de ordenes enviadas y validar si fueron aplicasas por el agente
+# Llebar un historial del estado y flujo de una orden, debe contener, el texto envioado al aajente y la respuesta del mismo.
+# reportar estado de ordenes enviadas, pendientes, ejecutadas, canceladas, por medio de mails
+# entergar links de acciones alternatibas de ordenes segun el estado y sus alternativas
+# reevaluar si coresponde enviar, reenviar, anular localmente, o solicita rla cancelacion una orden  al agente

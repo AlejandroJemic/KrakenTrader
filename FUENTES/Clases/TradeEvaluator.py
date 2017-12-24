@@ -94,9 +94,9 @@ class OpenCloseValues:
     deltaCHSaveProfit =  8         # % de cambio acumulada que marga un cierre y reapertura de la operacion para salvar ganancias
     UpTrendWaitPeriods = 20        # cantidad de periodos a esperar para abrir  por  tendencia en alsa
     
-##################################################################################################################3
-#    class TradeEvaluator:                                                                      ##################3
-##################################################################################################################3
+##################################################################################################################
+#    class TradeEvaluator:                                                                      ##################
+##################################################################################################################
 
 class TradeEvaluator:
     '''
@@ -233,7 +233,6 @@ class TradeEvaluator:
 
         #  pIsBackTest = True:
         DBA.dbMyTradesTable = 'MyTrades'
-        DBA.CreateAllTables()
         DBA.MytradesDeleteAll()     # borra la tabla para reprocesar
         T = TradeValues()
         for i in range(len(s)):
@@ -378,24 +377,34 @@ class TradeEvaluator:
         '''
         establese los valores en la  apertura de una operacion
         '''
-        T.isOpen = True
-        T.openPos = i
-        T.idTrade = lastIdTrade + 1
-        T.sDesc = '({0}) {1}'.format(T.idTrade, T.sOpenCond)
-        T.inBase = False
-        T.openTime = s.index[i].to_pydatetime()
-        T.openingCH = cumch[i]
-        T.baseCH = T.openingCH + self.deltabaseCH
-        T.targetCH = T.openingCH + deltaTargetCH
-        T.stopLoseCH = T.openingCH + deltaStopLose
+        T.isOpen      = True
+        T.openPos     = i
+        T.idTrade     = lastIdTrade + 1
+        T.sDesc       = '({0}) {1}'.format(T.idTrade, T.sOpenCond)
+        T.inBase      = False
+        T.openTime    = s.index[i].to_pydatetime()
+        T.openingCH   = cumch[i]
+        T.baseCH      = T.openingCH + self.deltabaseCH
+        T.targetCH    = T.openingCH + deltaTargetCH
+        T.stopLoseCH  = T.openingCH + deltaStopLose
         T.TotalLoseCH = T.openingCH - OCV.deltaTotalLoseCH
         
-        T.openingP =  tc['price'][i]
-        T.baseP = T.openingP * ((100+self.deltabaseCH)/100)
-        T.targetP = T.openingP * ((100+deltaTargetCH)/100)
-        T.stopLoseP = T.openingP * ((100+deltaStopLose)/100)
-        T.TotalLoseP = T.openingP * ((100-OCV.deltaTotalLoseCH)/100)
+        T.openingP    =  tc['price'][i]
+        T.baseP       = T.openingP * ((100+self.deltabaseCH)/100)
+        T.targetP     = T.openingP * ((100+deltaTargetCH)/100)
+        T.stopLoseP   = T.openingP * ((100+deltaStopLose)/100)
+        T.TotalLoseP  = T.openingP * ((100-OCV.deltaTotalLoseCH)/100)
         
+        # reset closing values
+        T.sDesc       = ''
+        T.closeTime   = datetime(1900, 1, 1, 0, 0, 0)
+        T.closingCH   = 0.0
+        T.closingP    = 0.0
+        T.ClosePos    = 0
+        T.deltaCH     = 0.0
+        T.deltaP      = 0.0
+        T.sCloseCond  = ''
+        T.ClosingTypeID = 0
         return T
         
     def EvaluateClosing(self, T, OCV, s, deltaStopLose, bh,  cumch, i):
@@ -472,6 +481,9 @@ class TradeEvaluator:
         Encapsula las acciones realizadas al abrir una operacionales
         retorna un objeto del tipo TradeValues seteado con nuevos parametros operacionales (igual apertura nueva)
         '''
+        T = None
+        del T
+        T = TradeValues()
         T = self.SetOpening(OCV, T, tc, s, cumch, deltaTargetCH, deltaStopLose, Evalpos, self.lastIdTrade)
         self.sAction = self.sAction + '. Trade Opened'
         self.iAction = 2
@@ -506,19 +518,19 @@ class TradeEvaluator:
         '''
         establese los valores de cierre de una operacion
         '''
-        T.sDesc = T.sDesc + ' | {0}'.format(T.sCloseCond)
-        T.inBase = False
-        T.closeTime = s.index[i].to_pydatetime()
-        T.closingCH = bh.cum_change[i]
-        T.closingP = tc['price'][i]
-        T.ClosePos = i
-        
+        T.sDesc        = T.sDesc + ' | {0}'.format(T.sCloseCond)
+        T.inBase       = False
+        T.closeTime    = s.index[i].to_pydatetime()
+        T.closingCH    = bh.cum_change[i]
+        T.closingP     = tc['price'][i]
+        T.ClosePos     = i
+            
         if T.openingCH >= T.closingCH:
-            T.deltaCH = T.closingCH - T.openingCH
-            T.deltaP = T.closingP - T.openingP
+            T.deltaCH      = T.closingCH - T.openingCH
+            T.deltaP       = T.closingP - T.openingP
         else:
-            T.deltaCH = T.closingCH - T.openingCH
-            T.deltaP = T.closingP - T.openingP
+            T.deltaCH      = T.closingCH - T.openingCH
+            T.deltaP       = T.closingP - T.openingP
         return T
         
     def CalcularMaximoTolerado(self, T, OCV, deltaStopLose):
