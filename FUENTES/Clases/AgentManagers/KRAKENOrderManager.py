@@ -18,3 +18,4 @@ class KRAKENOrderManager:
 		if self.SendOrdersEnabled == True:
 	    	raise NotImplementedError("To be implemented")
 	    return True
+	    
