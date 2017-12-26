@@ -390,7 +390,7 @@ class TradeEvaluator:
         T.maximo = self.obtenerMaximo(T.maximo,currentCumCH)
         T.maximoTolerado = self.CalcularMaximoTolerado(T,OCV, deltaStopLose)
         self.lastMaximo = T.maximo
-        
+
         LogEvent('currentCumCH: ' + str(round(currentCumCH,3)))
         LogEvent('maximo: ' + str(round(T.maximo,3)))
         LogEvent('maximoTolerado: '  + str(round(T.maximoTolerado,3)))
@@ -468,7 +468,7 @@ class TradeEvaluator:
         T.sOpenCond = sOpenCond        
         T.OpeningTypeID = OpeningTypeID
 
-        T = self.SetOpening(OCV, T, tc, s, cumch, deltaTargetCH, deltaStopLose, Evalpos, self.lastIdTrade)
+        T = self.SetOpening(OCV, T, bh, s, cumch, deltaTargetCH, deltaStopLose, Evalpos, self.lastIdTrade)
         self.sAction = self.sAction + '. Trade Opened'
         self.iAction = 2
         self.InsertOpenedTread(T, DBA)
