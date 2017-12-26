@@ -60,7 +60,7 @@ def SendMail(SUBJECT, msg, BODY):
     server.quit()
 
 
-def SendOrderMail(obj, subject='KRAKEN BOT', h3='KRAKEN BOT', P='Mail enviado por el kraken bot'):
+def SendOrderMail(obj, subject='KRAKEN BOT', h3='ORDEN EJECUTADA', P='SE HA EJECUTADO LA SUIGUIENTE ORDEN'):
     try:
         BODY = GetHTMLMail(obj, h3, P)
         SendMail(subject, h3, BODY)
@@ -73,6 +73,7 @@ def GetHTMLMail(obj, h3='', P=''):
     html = f.read()
     html = html.replace('<<MENSAGE>>',h3)
     html = html.replace('<<P>>',P)
+    html = html.replace('<<HREF>>','https://www.tradingview.com/chart/W9VPDAJI/') #TO-DO: LINK DEBE HACERSE DINAMICO CUANDO SE INCORPOREN OTRAS MONEDAS
     html = html.replace('<<TABLA>>',HTMLObjectValues(obj))
     return html
 

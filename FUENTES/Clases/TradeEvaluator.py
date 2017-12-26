@@ -250,11 +250,12 @@ class TradeEvaluator:
                 if (T.isOpen == True):
                     T = self.EvaluateClosing(T, OCV, s, deltaStopLose, bh,  cumch, i)
                     
-                    T = self.EvalauteSaveProfit(T, OCV, DBA, s, deltaTargetCH,  deltaStopLose, bh, tc, cumch, i)
-                    
                     if (T.isOpen == False) or ((i == len(s)-1) & (T.isOpen == True)): #si cerro operacion o es el ultimo periodo y alguna operacion sigue abierta
 
                         self.CloseTrade(T, s, bh, tc, i, DBA)
+
+                    T = self.EvalauteSaveProfit(T, OCV, DBA, s, deltaTargetCH,  deltaStopLose, bh, tc, cumch, i)
+
         #end For
         
         #self.SaveAllTrades(DBA) # es desuso desde v1.1
@@ -448,7 +449,7 @@ class TradeEvaluator:
             T = self.CloseTrade(T, s, bh, tc, i, DBA)
             T.sOpenCond = 'REOPEN TREND UP'
             T.OpeningTypeID = 7
-            T = self.OpenTrade(OCV, DBA , T, tc, s, cumch, deltaTargetCH, deltaStopLose, i)
+            T = self.OpenTrade(OCV, DBA , T, bh, s, cumch, deltaTargetCH, deltaStopLose, i)
         return T
 
     def OpenTrade(self, OCV, DBA , T, bh, s, cumch, deltaTargetCH, deltaStopLose, Evalpos):
@@ -494,11 +495,11 @@ class TradeEvaluator:
         self.lastIdTrade = T.idTrade
         self.lastOpenPos = T.openPos
         self.lastClosePos = T.ClosePos
+        SendOrderMail(T, subject='KRAKEN BOT: Trede Close - BTC', h3='TRADE Clase - BTC', P='Oportunidad de venta: BTC en USD' + str(round(T.closingP, 5)) )
+        LogObjectValues(T, h3='TRADE CLOSE - BTC')
         T = TradeValues()
         T.openPos = self.lastOpenPos
         T.ClosePos = self.lastClosePos
-        SendOrderMail(T, subject='KRAKEN BOT: Trede Close - BTC', h3='TRADE Clase - BTC', P='Oportunidad de venta: BTC en USD' + str(round(T.closingP, 5)) )
-        LogObjectValues(T, h3='TRADE CLOSE - BTC')
         return T
     
     def SetOpening(self, OCV, T, bh, s, cumch, deltaTargetCH, deltaStopLose, i, lastIdTrade):

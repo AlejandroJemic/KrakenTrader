@@ -147,7 +147,7 @@ from Utils import *
 def __init__(self, pAgentCode):
 	if pAgentCode == 'KRAKEN':
 		self.SendOrdersEnabled = True
-		self.AgentOrderManager = KRAKENOrderManager(self.SendOrdersEnabled)
+		self.AgentOrderManager = KRAKENOrderManager(self.SendOrdersEnabled) # TO-DO: SE DEBE HACER DINAICO CUANDO SE INCORPOREN NUEVOS AGENTES
 		self.AgentCode         = self.AgentOrderManager.AgentCode
 
 # considerar flag de interrumpion envio de ordenes al gente, ( no enviar mas compras, no enviar mas ventas independientes)
@@ -160,7 +160,6 @@ def EnviarOrden(self, OrderType):
     	raise NotImplementedError("To be implemented")
     return True
 
-S
 
 # enviar orden de compra (market, limit, date limit)
 # enviar orden de stoplost (market)
