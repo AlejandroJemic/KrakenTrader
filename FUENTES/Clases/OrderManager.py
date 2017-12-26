@@ -84,6 +84,7 @@ estados 3D, algun tipo de error
 # class OrderValues
 # ================================================================================================================
 class OrderValues:
+	
 	idTrade               = 0                             # Integer      # Id del trade al que coresponden
 	idOrder               = 0                             # Integer      # Id local de la orden 
 	OrderTime             = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # fecha hora de ingreso al sistema
@@ -136,6 +137,8 @@ class OrderHistoryValues:
 # ================================================================================================================
 
 from AgentManagers import *
+from Utils import *
+
 
  class OrderManager:
  	SendOrdersEnabled = True # hablita o deshabilita el envio general de ordenes
@@ -156,6 +159,8 @@ def EnviarOrden(self, OrderType):
 		self.AgentOrderManager.EnviarOrden(OrderType)
     	raise NotImplementedError("To be implemented")
     return True
+
+S
 
 # enviar orden de compra (market, limit, date limit)
 # enviar orden de stoplost (market)

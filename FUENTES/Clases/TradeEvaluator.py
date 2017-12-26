@@ -307,6 +307,7 @@ class TradeEvaluator:
             if T.idTrade == 0:
                 T = TradeValues() 
                 self.sAction  = 'No trades in DDBB'
+            self.lastIdTrade = T.idTrade
             if Evalpos > 12:
                 if (T.isOpen == False):
                     if Evalpos < len(tc):
@@ -372,6 +373,121 @@ class TradeEvaluator:
                 T.sOpenCond = "TREND UP"
                 T.OpeningTypeID = 6
         return T
+      
+    def EvaluateClosing(self, T, OCV, s, deltaStopLose, bh,  cumch, i):
+        '''
+        evalua cuando cerrar una operacion
+        '''
+        currentCumCH = cumch[i] -  T.openingCH
+        T.maximo = self.obtenerMaximo(T.maximo,currentCumCH)
+        T.maximoTolerado = self.CalcularMaximoTolerado(T,OCV, deltaStopLose)
+        LogEvent('currentCumCH: ' + str(round(currentCumCH,3)))
+        LogEvent('maximo: ' + str(T.maximo))
+        LogEvent('maximoTolerado: '  + str(T.maximoTolerado))
+        if bh.cum_change[i] >= T.baseCH: #nivel de perdidas operacionales superado
+            T.inBase = True
+        if T.inBase == True:
+            
+            if (currentCumCH <= T.maximoTolerado):
+                T.isOpen = False
+                T.sCloseCond = "Maximo AT {0} %CH, Tolerado AT {1} %CH".format(round(T.maximo,2), round(T.maximoTolerado,2))
+                T.ClosingTypeID = 1
+                LogEvent('ClosingTypeID 1')
+
+            if cumch[i] <= (T.stopLoseCH): #cierre por stop lose
+                T.isOpen = False
+                T.sCloseCond = "STOP LOSE AT {0} %CH".format(round(deltaStopLose,2))
+                T.ClosingTypeID = 2
+                LogEvent('ClosingTypeID 2')
+            elif (i >= (T.openPos + OCV.waitPeriods*OCV.waitFactor)): #cierre por tiempo trascurrido sin logar objetivos
+                T.isOpen = False
+                T.sCloseCond = "elapsed {0} times without goals | IN BASE".format(OCV.waitPeriods*OCV.waitFactor)
+                T.ClosingTypeID = 3
+                LogEvent('ClosingTypeID 3')
+        
+        else: #nivel de perdidas operacionales no se logro 
+            ('cumch[i] - T.TotalLoseCH: {0}'.format(cumch[i] - T.TotalLoseCH))
+            if (s[i] <= 0) &(cumch[i] < T.TotalLoseCH): #cierre por perdida total
+                T.isOpen = False
+                T.sCloseCond = "TOTAL LOSE"
+                T.ClosingTypeID = 4
+                LogEvent('ClosingTypeID 4')
+            elif (i >= (T.openPos + OCV.waitPeriodsOutBase*OCV.waitFactorOutBase)): #cierre por tiempo trascurrido sin logar objetivos
+                T.isOpen = False
+                T.sCloseCond = "elapsed {0} times without goals | OUT BASE".format(OCV.waitPeriodsOutBase*OCV.waitFactorOutBase)
+                T.ClosingTypeID = 5
+                LogEvent('ClosingTypeID 5')
+        return T
+
+    def EvalauteSaveProfit(self, T, OCV, DBA, s, deltaTargetCH,  deltaStopLose, bh, tc, cumch, i):
+        '''
+        Permite cerrar y reabrir una posicion para asegurar las ganancias 
+        y continuar con la operacion, tiene la desbentaja de duplicar los gastos operativos tantas veses como se aplique la tecnica
+        '''
+        LogEvent('Evalaute Save Profit')
+        currentCumCH = cumch[i] -  T.openingCH
+        if  (T.isOpen == True) &  (currentCumCH >= OCV.deltaCHSaveProfit):
+            LogEvent('saving profit')
+            T.maximo = self.obtenerMaximo(T.maximo,currentCumCH)
+            T.maximoTolerado = self.CalcularMaximoTolerado(T,OCV, deltaStopLose)
+            T.isOpen = False
+            T.sCloseCond = "Save Profit AT {0} %CH".format(round(currentCumCH,2))
+            T.ClosingTypeID = 6
+
+            #ejecuta cierre y repartura
+            T = self.CloseTrade(T, s, bh, tc, i, DBA)
+            T.sOpenCond = 'REOPEN TREND UP'
+            T.OpeningTypeID = 7
+            T = self.OpenTrade(OCV, DBA , T, tc, s, cumch, deltaTargetCH, deltaStopLose, i)
+        return T
+
+    def OpenTrade(self, OCV, DBA , T, tc, s, cumch, deltaTargetCH, deltaStopLose, Evalpos):
+        '''
+        Encapsula las acciones realizadas al abrir una operacionales
+        retorna un objeto del tipo TradeValues seteado con nuevos parametros operacionales (igual apertura nueva)
+        '''
+        sOpenCond = T.sOpenCond
+        OpeningTypeID = T.OpeningTypeID
+
+        T = None
+        del T
+        T = TradeValues()
+
+        T.sOpenCond = sOpenCond        
+        T.OpeningTypeID = OpeningTypeID
+
+        T = self.SetOpening(OCV, T, tc, s, cumch, deltaTargetCH, deltaStopLose, Evalpos, self.lastIdTrade)
+        self.sAction = self.sAction + '. Trade Opened'
+        self.iAction = 2
+        self.InsertOpenedTread(T, DBA)
+        self.sAction = self.sAction + '. Trade saved in DDBB'
+        self.iAction = 3
+        SendOrderMail(T, subject='KRAKEN BOT: Trede Open - BTC', h3='TRADE OPEN - BTC', P='Oportunidad de compra: BTC en USD' + str(round(T.openingP, 5)) )
+        LogObjectValues(T, h3='TRADE OPEN - BTC')
+        return T
+
+    def CloseTrade(self, T, s, bh, tc, Evalpos, DBA):
+        '''
+        Encapsula las acciones realizadas al cerrer una operacionales
+        retorna un objeto del tipo TradeValues nuevo
+        '''
+        T = self.SetClosing( T, s, bh, tc, Evalpos)
+        self.sAction = self.sAction + '. Trade Closed'
+        self.iAction = 5
+            
+        self.UpdateClosedTread(T, DBA) 
+        self.sAction = self.sAction + '. Trade Updated in DDBB'
+        self.iAction = 6
+        
+        self.lastIdTrade = T.idTrade
+        self.lastOpenPos = T.openPos
+        self.lastClosePos = T.ClosePos
+        T = TradeValues()
+        T.openPos = self.lastOpenPos
+        T.ClosePos = self.lastClosePos
+        SendOrderMail(T, subject='KRAKEN BOT: Trede Close - BTC', h3='TRADE Clase - BTC', P='Oportunidad de venta: BTC en USD' + str(round(T.closingP, 5)) )
+        LogObjectValues(T, h3='TRADE CLOSE - BTC')
+        return T
     
     def SetOpening(self, OCV, T, tc, s, cumch, deltaTargetCH, deltaStopLose, i, lastIdTrade):
         '''
@@ -404,123 +520,8 @@ class TradeEvaluator:
         T.deltaP      = 0.0
         T.sCloseCond  = ''
         T.ClosingTypeID = 0
-
-        LogObjectValues(T, 'Trade Abierto')
-
         return T
-        
-    def EvaluateClosing(self, T, OCV, s, deltaStopLose, bh,  cumch, i):
-        '''
-        evalua cuando cerrar una operacion
-        '''
-        if bh.cum_change[i] >= T.baseCH: #nivel de perdidas operacionales superado
-            T.inBase = True
-        if T.inBase == True:
-            currentCumCH = cumch[i] -  T.openingCH
-            T.maximo = self.obtenerMaximo(T.maximo,currentCumCH)
-            T.maximoTolerado = self.CalcularMaximoTolerado(T,OCV, deltaStopLose)
-            LogEvent('currentCumCH: ' + str(currentCumCH))
-            LogEvent('maximo: ' + str(T.maximo))
-            LogEvent('maximoTolerado: '  + str(T.maximoTolerado))
-            if (currentCumCH <= T.maximoTolerado):
-                T.isOpen = False
-                T.sCloseCond = "Maximo AT {0} %CH, Tolerado AT {1} %CH".format(round(T.maximo,2), round(T.maximoTolerado,2))
-                T.ClosingTypeID = 1
-                LogEvent('1')
-
-            if cumch[i] <= (T.stopLoseCH): #cierre por stop lose
-                T.isOpen = False
-                T.sCloseCond = "STOP LOSE AT {0} %CH".format(round(deltaStopLose,2))
-                T.ClosingTypeID = 2
-                LogEvent('2')
-            elif (i >= (T.openPos + OCV.waitPeriods*OCV.waitFactor)): #cierre por tiempo trascurrido sin logar objetivos
-                T.isOpen = False
-                T.sCloseCond = "elapsed {0} times without goals | IN BASE".format(OCV.waitPeriods*OCV.waitFactor)
-                T.ClosingTypeID = 3
-                LogEvent('3')
-        
-        else: #nivel de perdidas operacionales no se logro 
-            ('cumch[i] - T.TotalLoseCH: {0}'.format(cumch[i] - T.TotalLoseCH))
-            if (s[i] <= 0) &(cumch[i] < T.TotalLoseCH): #cierre por perdida total
-                T.isOpen = False
-                T.sCloseCond = "TOTAL LOSE"
-                T.ClosingTypeID = 4
-                LogEvent('4')
-            elif (i >= (T.openPos + OCV.waitPeriodsOutBase*OCV.waitFactorOutBase)): #cierre por tiempo trascurrido sin logar objetivos
-                T.isOpen = False
-                T.sCloseCond = "elapsed {0} times without goals | OUT BASE".format(OCV.waitPeriodsOutBase*OCV.waitFactorOutBase)
-                T.ClosingTypeID = 5
-                LogEvent('5')
-        return T
-
-    def EvalauteSaveProfit(self, T, OCV, DBA, s, deltaTargetCH,  deltaStopLose, bh, tc, cumch, i):
-        '''
-        Permite cerrar y reabrir una posicion para asegurar las ganancias 
-        y continuar con la operacion, tiene la desbentaja de duplicar los gastos operativos tantas veses como se aplique la tecnica
-        '''
-        LogEvent('Evalaute Save Profit')
-        currentCumCH = cumch[i] -  T.openingCH
-        if  (T.isOpen == True) &  (currentCumCH >= OCV.deltaCHSaveProfit):
-            LogEvent('saving profit')
-            T.maximo = self.obtenerMaximo(T.maximo,currentCumCH)
-            T.maximoTolerado = self.CalcularMaximoTolerado(T,OCV, deltaStopLose)
-            T.isOpen = False
-            T.sCloseCond = "Save Profit AT {0} %CH".format(round(currentCumCH,2))
-            T.ClosingTypeID = 6
-
-            #ejecuta cierre y repartura
-            T = self.CloseTrade(T, s, bh, tc, i, DBA)
-            T.sOpenCond = 'REOPEN TREND UP'
-            T.OpeningTypeID = 7
-            T = self.OpenTrade(OCV, DBA , T, tc, s, cumch, deltaTargetCH, deltaStopLose, i)
-        return T
-
-    def OpenTrade(self, OCV, DBA , T, tc, s, cumch, deltaTargetCH, deltaStopLose, Evalpos):
-        '''
-        Encapsula las acciones realizadas al abrir una operacionales
-        retorna un objeto del tipo TradeValues seteado con nuevos parametros operacionales (igual apertura nueva)
-        '''
-        LogEvent('Opening Trade')
-        sOpenCond = T.sOpenCond
-        OpeningTypeID = T.OpeningTypeID
-
-        T = None
-        del T
-        T = TradeValues()
-
-        T.sOpenCond = sOpenCond        
-        T.OpeningTypeID = OpeningTypeID
-
-        T = self.SetOpening(OCV, T, tc, s, cumch, deltaTargetCH, deltaStopLose, Evalpos, self.lastIdTrade)
-        self.sAction = self.sAction + '. Trade Opened'
-        self.iAction = 2
-        self.InsertOpenedTread(T, DBA)
-        self.sAction = self.sAction + '. Trade saved in DDBB'
-        self.iAction = 3
-        return T
-
-    def CloseTrade(self, T, s, bh, tc, Evalpos, DBA):
-        '''
-        Encapsula las acciones realizadas al cerrer una operacionales
-        retorna un objeto del tipo TradeValues nuevo
-        '''
-        LogEvent('Closing Trade')
-        T = self.SetClosing( T, s, bh, tc, Evalpos)
-        self.sAction = self.sAction + '. Trade Closed'
-        self.iAction = 5
-            
-        self.UpdateClosedTread(T, DBA) 
-        self.sAction = self.sAction + '. Trade Updated in DDBB'
-        self.iAction = 6
-        
-        self.lastIdTrade = T.idTrade
-        self.lastOpenPos = T.openPos
-        self.lastClosePos = T.ClosePos
-        T = TradeValues()
-        T.openPos = self.lastOpenPos
-        T.ClosePos = self.lastClosePos
-        return T
-    
+     
     def SetClosing(self, T, s, bh, tc, i):
         '''
         establese los valores de cierre de una operacion
@@ -538,7 +539,6 @@ class TradeEvaluator:
         else:
             T.deltaCH      = T.closingCH - T.openingCH
             T.deltaP       = T.closingP - T.openingP
-        LogObjectValues(T, 'Trade Cerrado')
         return T
         
     def CalcularMaximoTolerado(self, T, OCV, deltaStopLose):
@@ -559,6 +559,8 @@ class TradeEvaluator:
             elif (T.maximo >= OCV.deltaCHObjetivo *2)    & (T.maximo < OCV.deltaCHObjetivo *2.5):  T.maximoTolerado = OCV.deltaCHObjetivo *1.8
             elif (T.maximo >= OCV.deltaCHObjetivo *2.5): T.maximoTolerado = OCV.deltaCHObjetivo *2.1
         return T.maximoTolerado
+
+    ##################################################################################################################3
     
     def InsertOpenedTread(self, T, DBA):
         '''
