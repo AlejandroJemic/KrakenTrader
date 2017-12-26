@@ -90,7 +90,7 @@ class OpenCloseValues:
     waitFactor = 48
     waitPeriodsOutBase = 60        # cuando la operacion esta abierta fuera de base, se espera periodos=waitPeriodsOutBase * waitFactorOutBase
     waitFactorOutBase = 3
-    cumCHIncrement = 3.5           # % de cambio acumuladoa para apertura de operacion si existe tendencia positiva lenta
+    cumCHIncrement = 2.5           # % de cambio acumuladoa para apertura de operacion si existe tendencia positiva lenta
     deltaCHSaveProfit =  8         # % de cambio acumulada que marga un cierre y reapertura de la operacion para salvar ganancias
     UpTrendWaitPeriods = 20        # cantidad de periodos a esperar para abrir  por  tendencia en alsa
     
@@ -110,7 +110,8 @@ class TradeEvaluator:
     
     lastIdTrade = 0          # ultimo id trade creado
     lastOpenPos = 0          # ultimo posision incide para apertura operacion
-    lastClosePos = 0         # ultima posision indice para cierre operacion 
+    lastClosePos = 0         # ultima posision indice para cierre operacion
+    lastMaximo = 0.0         # ultimo valor del maximo cuando una operacion esta abierta
 
     sAction  = 'No action'
     iAction = 0
@@ -173,8 +174,10 @@ class TradeEvaluator:
                 if pfin > 0:
                     bh2['cum_change'] = bh2['change'].cumsum()
                     cumch = bh2['cum_change']
+                    LogEvent('cumch'+ str(round(cumch[pfin],3)))
                     if (cumch[pfin] >= OCV.cumCHIncrement):
                         isUpTrend = True
+                        LogEvent('isUpTrend ' + str(isUpTrend))
         except:
             dbg.set_trace()
             raise
@@ -308,6 +311,9 @@ class TradeEvaluator:
                 T = TradeValues() 
                 self.sAction  = 'No trades in DDBB'
             self.lastIdTrade = T.idTrade
+            
+            T.maximo = self.lastMaximo
+
             if Evalpos > 12:
                 if (T.isOpen == False):
                     if Evalpos < len(tc):
@@ -316,7 +322,7 @@ class TradeEvaluator:
                         T = self.EvaluateOpening(T, OCV, s,sma03, sma12, volb, bh, tc, Evalpos)
                     if T.isOpen == True:
                         
-                        T = self.OpenTrade(OCV, DBA , T, tc, s, cumch, deltaTargetCH, deltaStopLose, Evalpos)
+                        T = self.OpenTrade(OCV, DBA , T, bh, s, cumch, deltaTargetCH, deltaStopLose, Evalpos)
                         
                 if (T.isOpen == True):
                     self.sAction = self.sAction + '. Evaluating Closing'
@@ -342,6 +348,7 @@ class TradeEvaluator:
         pfin = i
         b = bh[pini:pfin].copy(deep=True)
         IsUpTrend = self.EvaluateTrend(b,OCV)
+        LogEvent('IsUpTrend '+ str(IsUpTrend))
         if(volb[i] * tc['price'][i] >= OCV.volPriceOpen):
             '''
             if (s[i] > 0) & (s[i-1] < 0):
@@ -378,12 +385,15 @@ class TradeEvaluator:
         '''
         evalua cuando cerrar una operacion
         '''
+        T.maximo = self.lastMaximo
         currentCumCH = cumch[i] -  T.openingCH
         T.maximo = self.obtenerMaximo(T.maximo,currentCumCH)
         T.maximoTolerado = self.CalcularMaximoTolerado(T,OCV, deltaStopLose)
+        self.lastMaximo = T.maximo
+        
         LogEvent('currentCumCH: ' + str(round(currentCumCH,3)))
-        LogEvent('maximo: ' + str(T.maximo))
-        LogEvent('maximoTolerado: '  + str(T.maximoTolerado))
+        LogEvent('maximo: ' + str(round(T.maximo,3)))
+        LogEvent('maximoTolerado: '  + str(round(T.maximoTolerado,3)))
         if bh.cum_change[i] >= T.baseCH: #nivel de perdidas operacionales superado
             T.inBase = True
         if T.inBase == True:
@@ -441,7 +451,7 @@ class TradeEvaluator:
             T = self.OpenTrade(OCV, DBA , T, tc, s, cumch, deltaTargetCH, deltaStopLose, i)
         return T
 
-    def OpenTrade(self, OCV, DBA , T, tc, s, cumch, deltaTargetCH, deltaStopLose, Evalpos):
+    def OpenTrade(self, OCV, DBA , T, bh, s, cumch, deltaTargetCH, deltaStopLose, Evalpos):
         '''
         Encapsula las acciones realizadas al abrir una operacionales
         retorna un objeto del tipo TradeValues seteado con nuevos parametros operacionales (igual apertura nueva)
@@ -452,6 +462,8 @@ class TradeEvaluator:
         T = None
         del T
         T = TradeValues()
+
+        self.lastMaximo = 0
 
         T.sOpenCond = sOpenCond        
         T.OpeningTypeID = OpeningTypeID
@@ -489,7 +501,7 @@ class TradeEvaluator:
         LogObjectValues(T, h3='TRADE CLOSE - BTC')
         return T
     
-    def SetOpening(self, OCV, T, tc, s, cumch, deltaTargetCH, deltaStopLose, i, lastIdTrade):
+    def SetOpening(self, OCV, T, bh, s, cumch, deltaTargetCH, deltaStopLose, i, lastIdTrade):
         '''
         establese los valores en la  apertura de una operacion
         '''
@@ -505,7 +517,7 @@ class TradeEvaluator:
         T.stopLoseCH  = T.openingCH + deltaStopLose
         T.TotalLoseCH = T.openingCH - OCV.deltaTotalLoseCH
         
-        T.openingP    =  tc['price'][i]
+        T.openingP    = bh['close'][i]
         T.baseP       = T.openingP * ((100+self.deltabaseCH)/100)
         T.targetP     = T.openingP * ((100+deltaTargetCH)/100)
         T.stopLoseP   = T.openingP * ((100+deltaStopLose)/100)
@@ -530,7 +542,7 @@ class TradeEvaluator:
         T.inBase       = False
         T.closeTime    = s.index[i].to_pydatetime()
         T.closingCH    = bh.cum_change[i]
-        T.closingP     = tc['price'][i]
+        T.closingP     = bh['close'][i]
         T.ClosePos     = i
             
         if T.openingCH >= T.closingCH:
