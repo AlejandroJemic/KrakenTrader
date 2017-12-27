@@ -9,11 +9,11 @@ import time
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, MetaData, Table, Column, DateTime, Float, String, Integer
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import SQLAlchemyError
 from DTO import MyTrades
 from TradeEvaluator import TradeValues
 import os
 from Utils import *
+import sys
 
 
 path = os.getcwd()
@@ -278,8 +278,8 @@ class DBAdapter:
             q = 'delete from ' + self.dbMyTradesTable
             session.execute(q)
             session.commit()
-        except SQLAlchemyError as e:
-            print(e)
+        except:
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
         finally:
             session.close()
 
@@ -293,14 +293,14 @@ class DBAdapter:
             newTrade = MyTrades(oTradeValues, tableName)
             session.add(newTrade)
             session.commit()
-        except SQLAlchemyError as e:
-            print(e)
+        except:
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
         finally:
             session.close()
 
     def MytradesUpdateOne(self, oTradeValues):
         '''
-        inserta una fila en la tabla MyTrades a partir d eun objeto TradeValues por medio de SQLalchemy
+        actualiza una fila en la tabla MyTrades a partir de un objeto TradeValues por medio de SQLalchemy
         '''
         Session = sessionmaker(bind=self.engine)
         session = Session()
@@ -328,8 +328,8 @@ class DBAdapter:
             oTrade.Profit = oTradeValues.Profit
             oTrade.Profit_Gastos = oTradeValues.Profit_Gastos
             session.commit()
-        except SQLAlchemyError as e:
-            print(e)
+        except:
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
         finally:
             session.close()
 
@@ -350,8 +350,8 @@ class DBAdapter:
             else:
                 oTrade = None
             session.commit()
-        except SQLAlchemyError as e:
-            print(e)
+        except:
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
         finally:
             session.close()
         return oTrade

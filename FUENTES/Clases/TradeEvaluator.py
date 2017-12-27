@@ -373,10 +373,10 @@ class TradeEvaluator:
                     T.isOpen = True
                     T.sOpenCond = "SMA03 UP"
                     T.OpeningTypeID = 4
-            elif (IsUpTrend == True):
-                T.isOpen = True
-                T.sOpenCond = "TREND UP"
-                T.OpeningTypeID = 6
+        elif (IsUpTrend == True): # criterio isUpTrend ya no dependera del volumen
+            T.isOpen = True
+            T.sOpenCond = "TREND UP"
+            T.OpeningTypeID = 6
         return T
       
     def EvaluateClosing(self, T, OCV, s, deltaStopLose, bh,  cumch, i):
@@ -497,6 +497,7 @@ class TradeEvaluator:
         T = TradeValues()
         T.openPos = self.lastOpenPos
         T.ClosePos = self.lastClosePos
+        T.isOpen = False
         return T
     
     def SetOpening(self, OCV, T, bh, s, cumch, deltaTargetCH, deltaStopLose, i, lastIdTrade):
@@ -576,21 +577,27 @@ class TradeEvaluator:
         '''
         agrega una operacion cerrada a la lista de operacioens calculadas
         '''
-        DBA.MytradesInsertOne(T, DBA.dbMyTradesTable)
+        try:
+            DBA.MytradesInsertOne(T, DBA.dbMyTradesTable)
+         except:
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
         
     def UpdateClosedTread(self, T, DBA):
         '''
         actualiza una operacion cerrada a la lista de operacioens calculadas
         '''
-        newTrade = [T.idTrade,T.openTime,T.closeTime,T.sDesc,T.OpeningTypeID,T.ClosingTypeID,T.openingCH,T.baseCH,T.targetCH,T.stopLoseCH, T.TotalLoseCH,T.closingCH,T.deltaCH, T.openingP,T.baseP,T.targetP,T.stopLoseP,T.TotalLoseP,T.closingP,T.deltaP, T.Profit, T.Profit_Gastos]              
-        self.myTrades.loc[len(self.myTrades)] = newTrade
-        self.myTrades['Profit'] = self.myTrades['deltaCH'].cumsum()
-        self.myTrades['Profit_Gastos'] = self.restarGastos(self.myTrades['Profit'])
+        try:
+            newTrade = [T.idTrade,T.openTime,T.closeTime,T.sDesc,T.OpeningTypeID,T.ClosingTypeID,T.openingCH,T.baseCH,T.targetCH,T.stopLoseCH, T.TotalLoseCH,T.closingCH,T.deltaCH, T.openingP,T.baseP,T.targetP,T.stopLoseP,T.TotalLoseP,T.closingP,T.deltaP, T.Profit, T.Profit_Gastos]              
+            self.myTrades.loc[len(self.myTrades)] = newTrade
+            self.myTrades['Profit'] = self.myTrades['deltaCH'].cumsum()
+            self.myTrades['Profit_Gastos'] = self.restarGastos(self.myTrades['Profit'])
 
-        T.Profit = self.myTrades['Profit'][len(self.myTrades)-1]
-        T.Profit_Gastos = self.myTrades['Profit_Gastos'][len(self.myTrades)-1]
-
-        DBA.MytradesUpdateOne(T)
+            T.Profit = self.myTrades['Profit'][len(self.myTrades)-1]
+            T.Profit_Gastos = self.myTrades['Profit_Gastos'][len(self.myTrades)-1]
+        
+            DBA.MytradesUpdateOne(T)
+        except:
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
     
     def SaveAllTrades(self, DBA):
         '''
@@ -642,3 +649,5 @@ class TradeEvaluator:
                 T.isOpen = False 
                 T.ClosePos = s.index.get_loc(str(T.closeTime))  # inidce del tiempo de cierre
         return T
+
+
