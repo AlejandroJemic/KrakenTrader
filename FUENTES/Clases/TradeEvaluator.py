@@ -579,7 +579,7 @@ class TradeEvaluator:
         '''
         try:
             DBA.MytradesInsertOne(T, DBA.dbMyTradesTable)
-         except:
+        except:
             LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
         
     def UpdateClosedTread(self, T, DBA):
