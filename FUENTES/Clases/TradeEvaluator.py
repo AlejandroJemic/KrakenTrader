@@ -174,7 +174,7 @@ class TradeEvaluator:
                 if pfin > 0:
                     bh2['cum_change'] = bh2['change'].cumsum()
                     cumch = bh2['cum_change']
-                    LogEvent('cumch'+ str(round(cumch[pfin],3)))
+                    LogEvent('cumch '+ str(round(cumch[pfin],3)))
                     if (cumch[pfin] >= OCV.cumCHIncrement):
                         isUpTrend = True
                         LogEvent('isUpTrend ' + str(isUpTrend))
@@ -255,7 +255,6 @@ class TradeEvaluator:
                         self.CloseTrade(T, s, bh, tc, i, DBA)
 
                     T = self.EvalauteSaveProfit(T, OCV, DBA, s, deltaTargetCH,  deltaStopLose, bh, tc, cumch, i)
-
         #end For
         
         #self.SaveAllTrades(DBA) # es desuso desde v1.1
@@ -314,15 +313,13 @@ class TradeEvaluator:
             self.lastIdTrade = T.idTrade
             
             T.maximo = self.lastMaximo
-
             if Evalpos > 12:
                 if (T.isOpen == False):
-                    if Evalpos < len(tc):
+                    if Evalpos < len(s):
                         self.sAction  = self.sAction + '. Evaluating opening'
                         self.iAction = 1
                         T = self.EvaluateOpening(T, OCV, s,sma03, sma12, volb, bh, tc, Evalpos)
                     if T.isOpen == True:
-                        
                         T = self.OpenTrade(OCV, DBA , T, bh, s, cumch, deltaTargetCH, deltaStopLose, Evalpos)
                         
                 if (T.isOpen == True):
