@@ -93,6 +93,7 @@ class OpenCloseValues:
     cumCHIncrement = 2.5           # % de cambio acumuladoa para apertura de operacion si existe tendencia positiva lenta
     deltaCHSaveProfit =  8         # % de cambio acumulada que marga un cierre y reapertura de la operacion para salvar ganancias
     UpTrendWaitPeriods = 20        # cantidad de periodos a esperar para abrir  por  tendencia en alsa
+    ToleranceFalseDrops = 3        # tolerancia ante caidas falsas donde el precio marca <= al stopLost o el TotalLost
     
 ##################################################################################################################
 #    class TradeEvaluator:                                                                      ##################
@@ -219,6 +220,8 @@ class TradeEvaluator:
         print('cumCHIncrement     ' + str(OCV.cumCHIncrement))
         print('deltaCHSaveProfit  ' + str(OCV.deltaCHSaveProfit))
         print('UpTrendWaitPeriods ' + str(OCV.UpTrendWaitPeriods))
+        print('ToleranceFalseDrops ' + str(OCV.ToleranceFalseDrops))
+
 
         # valores generales
         deltabaseCH = self.deltabaseCH                       # % para cubrir gastos operacionales por compra venta
@@ -392,10 +395,15 @@ class TradeEvaluator:
         LogEvent('currentCumCH: ' + str(round(currentCumCH,3)))
         LogEvent('maximo: ' + str(round(T.maximo,3)))
         LogEvent('maximoTolerado: '  + str(round(T.maximoTolerado,3)))
+
+        pini = T.openPos
+        pfin = i
+        b = bh[pini:pfin].copy(deep=True) #slide desde inicio de operacion
+
         if bh.cum_change[i] >= T.baseCH: #nivel de perdidas operacionales superado
             T.inBase = True
         if T.inBase == True:
-            
+                        
             if (currentCumCH <= T.maximoTolerado):
                 T.isOpen = False
                 T.sCloseCond = "Maximo AT {0} %CH, Tolerado AT {1} %CH".format(round(T.maximo,2), round(T.maximoTolerado,2))
@@ -403,10 +411,12 @@ class TradeEvaluator:
                 LogEvent('ClosingTypeID 1')
 
             if cumch[i] <= (T.stopLoseCH): #cierre por stop lose
-                T.isOpen = False
-                T.sCloseCond = "STOP LOSE AT {0} %CH".format(round(deltaStopLose,2))
-                T.ClosingTypeID = 2
-                LogEvent('ClosingTypeID 2')
+                cant = len(b[b['close'] <= T.stopLoseCH])
+                if cant >= OCV.ToleranceFalseDrops: # tolerancia falsa caidas momentaneas
+                    T.isOpen = False
+                    T.sCloseCond = "STOP LOSE AT {0} %CH".format(round(deltaStopLose,2))
+                    T.ClosingTypeID = 2
+                    LogEvent('ClosingTypeID 2')
             elif (i >= (T.openPos + OCV.waitPeriods*OCV.waitFactor)): #cierre por tiempo trascurrido sin logar objetivos
                 T.isOpen = False
                 T.sCloseCond = "elapsed {0} times without goals | IN BASE".format(OCV.waitPeriods*OCV.waitFactor)
@@ -416,10 +426,12 @@ class TradeEvaluator:
         else: #nivel de perdidas operacionales no se logro 
             ('cumch[i] - T.TotalLoseCH: {0}'.format(cumch[i] - T.TotalLoseCH))
             if (s[i] <= 0) &(cumch[i] < T.TotalLoseCH): #cierre por perdida total
-                T.isOpen = False
-                T.sCloseCond = "TOTAL LOSE"
-                T.ClosingTypeID = 4
-                LogEvent('ClosingTypeID 4')
+                cant = len(b[b['close'] <= T.TotalLoseCH])
+                if cant >= OCV.ToleranceFalseDrops: # tolerancia falsa caidas momentaneas
+                    T.isOpen = False
+                    T.sCloseCond = "TOTAL LOSE"
+                    T.ClosingTypeID = 4
+                    LogEvent('ClosingTypeID 4')
             elif (i >= (T.openPos + OCV.waitPeriodsOutBase*OCV.waitFactorOutBase)): #cierre por tiempo trascurrido sin logar objetivos
                 T.isOpen = False
                 T.sCloseCond = "elapsed {0} times without goals | OUT BASE".format(OCV.waitPeriodsOutBase*OCV.waitFactorOutBase)
@@ -579,6 +591,7 @@ class TradeEvaluator:
         '''
         try:
             DBA.MytradesInsertOne(T, DBA.dbMyTradesTable)
+            self.myTrades = DBA.ReadMyTrades()
         except:
             LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
         
@@ -587,6 +600,7 @@ class TradeEvaluator:
         actualiza una operacion cerrada a la lista de operacioens calculadas
         '''
         try:
+            self.myTrades = DBA.ReadMyTrades() # leer todos los trades para calcular profit y gastos acumulados
             newTrade = [T.idTrade,T.openTime,T.closeTime,T.sDesc,T.OpeningTypeID,T.ClosingTypeID,T.openingCH,T.baseCH,T.targetCH,T.stopLoseCH, T.TotalLoseCH,T.closingCH,T.deltaCH, T.openingP,T.baseP,T.targetP,T.stopLoseP,T.TotalLoseP,T.closingP,T.deltaP, T.Profit, T.Profit_Gastos]              
             self.myTrades.loc[len(self.myTrades)] = newTrade
             self.myTrades['Profit'] = self.myTrades['deltaCH'].cumsum()
@@ -598,6 +612,8 @@ class TradeEvaluator:
             DBA.MytradesUpdateOne(T)
         except:
             LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
+
+
     
     def SaveAllTrades(self, DBA):
         '''
