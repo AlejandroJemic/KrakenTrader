@@ -93,8 +93,7 @@ class OpenCloseValues:
     cumCHIncrement = 2.5           # % de cambio acumuladoa para apertura de operacion si existe tendencia positiva lenta
     deltaCHSaveProfit =  8         # % de cambio acumulada que marga un cierre y reapertura de la operacion para salvar ganancias
     UpTrendWaitPeriods = 20        # cantidad de periodos a esperar para abrir  por  tendencia en alsa
-    ToleranceFalseDrops = 3        # tolerancia ante caidas falsas donde el precio marca <= al stopLost o el TotalLost
-    
+       
 ##################################################################################################################
 #    class TradeEvaluator:                                                                      ##################
 ##################################################################################################################
@@ -220,8 +219,6 @@ class TradeEvaluator:
         print('cumCHIncrement     ' + str(OCV.cumCHIncrement))
         print('deltaCHSaveProfit  ' + str(OCV.deltaCHSaveProfit))
         print('UpTrendWaitPeriods ' + str(OCV.UpTrendWaitPeriods))
-        print('ToleranceFalseDrops ' + str(OCV.ToleranceFalseDrops))
-
 
         # valores generales
         deltabaseCH = self.deltabaseCH                       # % para cubrir gastos operacionales por compra venta

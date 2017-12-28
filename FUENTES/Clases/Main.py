@@ -16,35 +16,33 @@ def WorkerTradeEvaluator():
     TE = TradeEvaluator()
     DBA = DBAdapter()
     while True:
-        
+        while not Lock.acquire():
+            LogEvent('[TradeEvaluator]: No se puede bloquear. Waitng  1s...') 
+            time.sleep(1)
+        LogEvent('[TradeEvaluator]: Bloqueando')
         startTime = datetime.now()
         try:
-            Lock.acquire()
-            LogEvent('')
             LogEvent('Evaluacion Inicio at ' + str(startTime))
             DBA.EndSampleTime = startTime
             Balance = DBA.ReadBalanceHistory()
             Condensation = DBA.ReadCondensatedTrades()
-            
             sAction , iAction = TE.OpenerCloserEvaluatorOnLine (Balance, Condensation, DBA)
             LogEvent(sAction)
             LogEvent('Evaluacion FIN. ')
             Lock.release()
-
         except:
-            Lock.release()
             LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
             LogEvent('waiting 5s...')
+            Lock.release()
             time.sleep(5)
             continue
         lapTime = datetime.now()
         LogEvent('waitng  60s...')
         t = espera -PassTime(startTime, lapTime)
-
-       
         if t > 0:
             time.sleep(espera -PassTime(startTime, lapTime))
         lapTime = datetime.now()
+        LogEvent('')
         LogEvent('elapsed {0} sec'.format(PassTime(startTime, lapTime)))
 
 def Main():
@@ -52,7 +50,7 @@ def Main():
         DBA = DBAdapter()
         DBA.CreateAllTables()
         threads = list()
-        LogEvent('inicio main')
+        LogEvent('Inicio Main')
         tCM = threading.Thread(target=WorkerConsultarMarquet, name='ConsultarMarketBalance')
         threads.append(tCM)
         tCM.start()

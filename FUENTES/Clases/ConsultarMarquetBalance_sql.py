@@ -187,7 +187,11 @@ def ConultarOnline():
                 error = response['error']
                 errorTiker = tikerResponce['error']
                 if (len(error) == 0) & (len(errorTiker) == 0):
-                    Lock.acquire()
+                    while not Lock.acquire():
+                        LogEvent('[ConsultarMarketBalance]: No se puede bloquear. Waitng  1s...') 
+                        time.sleep(1)
+                    LogEvent('[ConsultarMarketBalance]: Bloqueando')
+                    LogEvent('lap {0} -  at {1}'.format(i, startTime))
                     trades = pd.DataFrame(response['result']['XXBTZUSD'])
                     # formatear datos
                     trades.columns = TradesColsNames
@@ -230,8 +234,8 @@ def ConultarOnline():
                     volsell = mb['sell'].sum()
                     unbalance = mb['delta'].sum()
                     balanceRatio = volbuy / (volbuy - volsell) # es un valor porcentual entre 0 y 1
-                    LogEvent("")
-                    LogEvent('lap {0} -  at {1}'.format(i, startTime))
+
+                   
                     LogEvent('balanceRatio: {0}'.format(balanceRatio))
                     LogEvent('volbuy:       {b}-BTCUSD | volsell: {s}-BTCUSD'.format(b=volbuy,s=volsell))
                     LogEvent('-> Unbalance: {u}-BTCUSD'.format(u=unbalance))
@@ -290,6 +294,7 @@ def ConultarOnline():
             if t > 0:
                 time.sleep(espera -PassTime(startTime, lapTime))
             lapTime = datetime.now()
+            LogEvent("")
             LogEvent('elapsed {0} sec'.format(PassTime(startTime, lapTime)))
             i = i + 1
 
