@@ -395,48 +395,42 @@ class TradeEvaluator:
         LogEvent('currentCumCH: ' + str(round(currentCumCH,3)))
         LogEvent('maximo: ' + str(round(T.maximo,3)))
         LogEvent('maximoTolerado: '  + str(round(T.maximoTolerado,3)))
-
-        pini = T.openPos
-        pfin = i
-        b = bh[pini:pfin].copy(deep=True) #slide desde inicio de operacion
+        LogEvent('')
+        LogEvent('cumch: ' + str(round(cumch[i],3)))
+        LogEvent('openingCH: '  + str(round(T.openingCH,3)))
+        LogEvent('Es positivo: ' + str(cumch[i] >= T.openingCH) )
+        LogEvent('')
 
         if bh.cum_change[i] >= T.baseCH: #nivel de perdidas operacionales superado
             T.inBase = True
         if T.inBase == True:
-                        
             if (currentCumCH <= T.maximoTolerado):
                 T.isOpen = False
                 T.sCloseCond = "Maximo AT {0} %CH, Tolerado AT {1} %CH".format(round(T.maximo,2), round(T.maximoTolerado,2))
                 T.ClosingTypeID = 1
-                LogEvent('ClosingTypeID 1')
-
-            if cumch[i] <= (T.stopLoseCH): #cierre por stop lose
-                cant = len(b[b['close'] <= T.stopLoseCH])
-                if cant >= OCV.ToleranceFalseDrops: # tolerancia falsa caidas momentaneas
-                    T.isOpen = False
-                    T.sCloseCond = "STOP LOSE AT {0} %CH".format(round(deltaStopLose,2))
-                    T.ClosingTypeID = 2
-                    LogEvent('ClosingTypeID 2')
+                LogEvent(T.sCloseCond)
+            if ( ((cumch[i] < T.stopLoseCH) & (cumch[i]>=0) ) or ((cumch[i] > T.stopLoseCH) & (cumch[i]<0))): #cierre por stop lose
+                T.isOpen = False
+                T.sCloseCond = "STOP LOSE AT {0} %CH".format(round(deltaStopLose,2))
+                T.ClosingTypeID = 2
+                LogEvent(T.sCloseCond)
             elif (i >= (T.openPos + OCV.waitPeriods*OCV.waitFactor)): #cierre por tiempo trascurrido sin logar objetivos
                 T.isOpen = False
                 T.sCloseCond = "elapsed {0} times without goals | IN BASE".format(OCV.waitPeriods*OCV.waitFactor)
                 T.ClosingTypeID = 3
-                LogEvent('ClosingTypeID 3')
+                LogEvent(T.sCloseCond)
         
         else: #nivel de perdidas operacionales no se logro 
-            ('cumch[i] - T.TotalLoseCH: {0}'.format(cumch[i] - T.TotalLoseCH))
-            if (s[i] <= 0) &(cumch[i] < T.TotalLoseCH): #cierre por perdida total
-                cant = len(b[b['close'] <= T.TotalLoseCH])
-                if cant >= OCV.ToleranceFalseDrops: # tolerancia falsa caidas momentaneas
-                    T.isOpen = False
-                    T.sCloseCond = "TOTAL LOSE"
-                    T.ClosingTypeID = 4
-                    LogEvent('ClosingTypeID 4')
+            if (s[i] <= 0) & (( (cumch[i] < T.TotalLoseCH) & (cumch[i]>=0) ) or ((cumch[i] > T.TotalLoseCH) & (cumch[i]<0))): #cierre por perdida total
+                T.isOpen = False
+                T.sCloseCond = "TOTAL LOSE"
+                T.ClosingTypeID = 4
+                LogEvent(T.sCloseCond)
             elif (i >= (T.openPos + OCV.waitPeriodsOutBase*OCV.waitFactorOutBase)): #cierre por tiempo trascurrido sin logar objetivos
                 T.isOpen = False
                 T.sCloseCond = "elapsed {0} times without goals | OUT BASE".format(OCV.waitPeriodsOutBase*OCV.waitFactorOutBase)
                 T.ClosingTypeID = 5
-                LogEvent('ClosingTypeID 5')
+                LogEvent(T.sCloseCond)
         return T
 
     def EvalauteSaveProfit(self, T, OCV, DBA, s, deltaTargetCH,  deltaStopLose, bh, tc, cumch, i):
@@ -504,7 +498,7 @@ class TradeEvaluator:
         self.lastIdTrade = T.idTrade
         self.lastOpenPos = T.openPos
         self.lastClosePos = T.ClosePos
-        SendOrderMail(T, subject='KRAKEN BOT: Trede Close - BTC', h3='TRADE Clase - BTC', P='Oportunidad de venta: BTC en USD' + str(round(T.closingP, 5)) )
+        SendOrderMail(T, subject='KRAKEN BOT: Trede Close - BTC', h3='TRADE Close - BTC', P='Oportunidad de venta: BTC en USD' + str(round(T.closingP, 5)) )
         LogObjectValues(T, h3='TRADE CLOSE - BTC')
         T = TradeValues()
         T.openPos = self.lastOpenPos
@@ -591,7 +585,6 @@ class TradeEvaluator:
         '''
         try:
             DBA.MytradesInsertOne(T, DBA.dbMyTradesTable)
-            self.myTrades = DBA.ReadMyTrades()
         except:
             LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
         
@@ -600,7 +593,6 @@ class TradeEvaluator:
         actualiza una operacion cerrada a la lista de operacioens calculadas
         '''
         try:
-            self.myTrades = DBA.ReadMyTrades() # leer todos los trades para calcular profit y gastos acumulados
             newTrade = [T.idTrade,T.openTime,T.closeTime,T.sDesc,T.OpeningTypeID,T.ClosingTypeID,T.openingCH,T.baseCH,T.targetCH,T.stopLoseCH, T.TotalLoseCH,T.closingCH,T.deltaCH, T.openingP,T.baseP,T.targetP,T.stopLoseP,T.TotalLoseP,T.closingP,T.deltaP, T.Profit, T.Profit_Gastos]              
             self.myTrades.loc[len(self.myTrades)] = newTrade
             self.myTrades['Profit'] = self.myTrades['deltaCH'].cumsum()
