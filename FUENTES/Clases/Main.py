@@ -7,27 +7,33 @@ from Utils import *
 from ConsultarMarquetBalance_sql import ConultarOnline
 from  threading import *
 
+DBA = DBAdapter()
+
 def WorkerConsultarMarquet():
-	ConultarOnline()
+	ConultarOnline(DBA)
 
 def WorkerTradeEvaluator():
     Lock = threading.Lock()
     espera = 60
     TE = TradeEvaluator()
-    DBA = DBAdapter()
     while True:
         while not Lock.acquire():
-            LogEvent('[TradeEvaluator]: No se puede bloquear. Waitng  1s...') 
+            LogEvent('No se puede bloquear. Waitng  1s...') 
             time.sleep(1)
-        LogEvent('[TradeEvaluator]: Bloqueando')
+        LogEvent('Bloqueando')
         startTime = datetime.now()
         try:
             LogEvent('Evaluacion Inicio at ' + str(startTime))
             DBA.EndSampleTime = startTime
             Balance = DBA.ReadBalanceHistory()
             Condensation = DBA.ReadCondensatedTrades()
+            
+            # LogEvent('lectura {0} sec'.format(PassTime(startTime, datetime.now()))) 
+
             sAction , iAction = TE.OpenerCloserEvaluatorOnLine (Balance, Condensation, DBA)
+
             LogEvent(sAction)
+            LogEvent('Total {0} sec'.format(PassTime(startTime, datetime.now()))) 
             LogEvent('Evaluacion FIN. ')
             Lock.release()
         except:

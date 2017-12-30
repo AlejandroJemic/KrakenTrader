@@ -5,7 +5,7 @@ from sqlalchemy import (create_engine, Column, Date, DateTime, Float, Integer, F
 from sqlalchemy.ext.declarative import declarative_base
 
 dbInstance = 'sqlite:///../../BBDD/krakenTeader.db'
-engine = create_engine(dbInstance, echo=True)
+engine = create_engine(dbInstance, echo=True, connect_args={'timeout': 20})
 Base = declarative_base()
 
 class BalanceHistory(Base):

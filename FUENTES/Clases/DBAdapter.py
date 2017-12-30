@@ -45,7 +45,7 @@ class DBAdapter:
         '''
         if dbInstance is not None:
             self.dbInstance = dbInstance
-        self.engine = create_engine(self.dbInstance)
+        self.engine = create_engine(self.dbInstance, connect_args={'timeout': 20})
         self.SetStartEndTimeAuto()
 
     def SetStartEndTimeAuto(self):
@@ -355,3 +355,18 @@ class DBAdapter:
         finally:
             session.close()
         return oTrade
+
+    def TradesHistoryDeleteAll(self):
+        '''
+        borrar la tabla Mytrades, para reprocesar
+        '''
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+        try:
+            q = 'delete from ' + self.dbTradesHistoryTable
+            session.execute(q)
+            session.commit()
+        except:
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
+        finally:
+            session.close()

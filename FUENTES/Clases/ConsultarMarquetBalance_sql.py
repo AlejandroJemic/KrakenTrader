@@ -29,7 +29,7 @@ path = os.getcwd()
 ROOT_path = os.sep.join(path.split(os.sep)[:-2])
 
 dbInstance = 'sqlite:///'+ ROOT_path +'\BBDD\krakenTrader.db'
-engine = create_engine(dbInstance)
+engine = create_engine(dbInstance, connect_args={'timeout': 20})
 dbBalanceHistoryTable = 'BalanceHistory'
 dbTradesHistoryTable = 'TradesHistory'
 dbTradesCondensationTable = 'TradesCondensation'
@@ -101,14 +101,19 @@ def setBBDD():
         metadata.create_all()    
 
 # funcion que condensa los trades del broker minuto a minuto para obtenre el volumen b y s por periodo
-def CondensatetradesOnline(lastKnowTradeTime, currentTime):
+def CondensatetradesOnline(DBA, lastKnowTradeTime, currentTime):
     #leer trades history
+    startTime = datetime.now()
     tradesHistoryToCondens = pd.read_sql(dbTradesHistoryTable, con=engine)
     tradesHistoryToCondens.set_index(pd.DatetimeIndex(tradesHistoryToCondens['time']),inplace=True)
     tradesHistoryToCondens.drop('time', axis=1,inplace=True)
+
+    # LogEvent('lectura t1 {0} sec'.format(PassTime(startTime, datetime.now()))) 
+
     # filtrar trades mayor a la ultima fecha conosida
     tradesHistoryToCondens = tradesHistoryToCondens[tradesHistoryToCondens.index > lastKnowTradeTime]
     tradesHistoryToCondens = tradesHistoryToCondens.sort_index()
+    # LogEvent('lectura t2 {0} sec'.format(PassTime(startTime, datetime.now())))
     #crear tataframe para condensar trades
     tradesCondensation =  pd.DataFrame(columns=['time','price','countb','volb','counts','vols'])
     #condensa, si existen datos para condensar 
@@ -130,6 +135,7 @@ def CondensatetradesOnline(lastKnowTradeTime, currentTime):
         new = [currentTime,0.0,0,0.0,0,0.0]
         tradesCondensation.loc[len(tradesCondensation)] = new
     #si exisnten datos
+    # LogEvent('calculo t3 {0} sec'.format(PassTime(startTime, datetime.now())))
     if (len(tradesCondensation) > 0):
         tradesCondensation.fillna(0,inplace=True)
         tradesCondensation.set_index(pd.DatetimeIndex(tradesCondensation['time']),inplace=True)
@@ -137,6 +143,10 @@ def CondensatetradesOnline(lastKnowTradeTime, currentTime):
     #guardar en bbdd, si existen datos condensados de fecha mayor a al ultima condensacion conosida
     if len(tradesCondensation[tradesCondensation.index >= currentTime]) > 0:
         tradesCondensation.to_sql(dbTradesCondensationTable,engine, if_exists='append')
+    # LogEvent('escritura t4 {0} sec'.format(PassTime(startTime, datetime.now())))
+
+    DBA.TradesHistoryDeleteAll()
+
     LogEvent('Condensated {0} Trades'.format(len(tradesHistoryToCondens)))
     return True   
 
@@ -151,7 +161,7 @@ def CondensateEmptytradesOnline(lastKnowTradeTime, currentTime):
     return True    
  
 #funcion principal que consulta los datos online 
-def ConultarOnline():
+def ConultarOnline(DBA):
     BalanceTime = 10 
     espera = 60 #segundas
     Ejecutar = True
@@ -186,11 +196,13 @@ def ConultarOnline():
                 # check error y extraer datos
                 error = response['error']
                 errorTiker = tikerResponce['error']
+                LogEvent('consulta {0} sec'.format(PassTime(startTime, datetime.now())))
+
                 if (len(error) == 0) & (len(errorTiker) == 0):
                     while not Lock.acquire():
-                        LogEvent('[ConsultarMarketBalance]: No se puede bloquear. Waitng  1s...') 
+                        LogEvent( 'No se puede bloquear. Waitng  1s...') 
                         time.sleep(1)
-                    LogEvent('[ConsultarMarketBalance]: Bloqueando')
+                    LogEvent('Bloqueando')
                     LogEvent('lap {0} -  at {1}'.format(i, startTime))
                     trades = pd.DataFrame(response['result']['XXBTZUSD'])
                     # formatear datos
@@ -263,16 +275,24 @@ def ConultarOnline():
                         BalanceHistory.loc[len(BalanceHistory)] = newBalance
                     else:
                         LogEvent(errorTiker,True)
-                        
+                    
+                    # LogEvent('calculo {0} sec'.format(PassTime(startTime, datetime.now())))  
+
                     BalanceHistory = BalanceHistory.set_index(pd.DatetimeIndex(BalanceHistory['Time']))
                     BalanceHistory.drop('Time', axis=1,inplace=True)
                     BalanceHistory.to_sql(dbBalanceHistoryTable,engine, if_exists='append')
+                    
+                    # LogEvent('escritura {0} sec'.format(PassTime(startTime, datetime.now()))) 
+
                     if len(trades[trades['time'] > lastKnowTradeTime]) > 0:     
                         trades= trades[trades['time'] > lastKnowTradeTime]
                         lapTradesCount = len(trades)
                         totalTradesCount = totalTradesCount + lapTradesCount
                         trades.to_sql(dbTradesHistoryTable,engine, if_exists='append')
-                        CondensatetradesOnline(lastKnowTradeTime, currentTime)
+                        CondensatetradesOnline(DBA, lastKnowTradeTime, currentTime)
+                        
+                        # LogEvent('condensado {0} sec'.format(PassTime(startTime, datetime.now()))) 
+
                         lastKnowTradeTime = trades['time'].max()
                         LogEvent('{0} new Trades | {1} Total Trades'.format(lapTradesCount, totalTradesCount))
                     else:
@@ -288,6 +308,7 @@ def ConultarOnline():
                 LogEvent('waiting 5s...')
                 time.sleep(5)
                 continue
+            LogEvent('Total {0} sec'.format(PassTime(startTime, datetime.now()))) 
             lapTime = datetime.now()
             LogEvent('waitng  60s...')
             t = espera -PassTime(startTime, lapTime)
