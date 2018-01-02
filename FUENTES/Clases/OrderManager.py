@@ -161,8 +161,80 @@ def EnviarOrden(self, OrderType):
     return True
 
 
+'''
+worrk flow ordenes
+ 1° leer ultimo trade
+ 		si no hay trades FIN
+ 		else si hay trade
+ 			leer ordenes asociadas al trade
+ 	si trade esta abierto
+ 		si existe orden asociada de compra
+ 			evaluar estado orden
+ 				si orden pausada o descartada FIN
+ 				si orden registrada: enviar
+ 				si roden eenviada si respuesta: consulta ordenes y confirmar estado
+ 					si orden fue resivida actualizar: estado
+ 					si orden no fue recivida: reenviar
+ 				so orden enviada con respuesta error: reenviar
+ 				si orden enviada con respuesta ok: actualizar estado
+ 					consultar ordenes y confirmar estado
+		else no existe orden
+			crear orden
+			enviar roden
+			espera rdespuesta orden
+				sin respueta: consulta ordenes y confirmar estado
+ 					si orden fue resivida actualizar: estado
+ 					si orden no fue recivida: reenviar
+			so orden enviada con respuesta error: reenviar
+ 				si orden enviada con respuesta ok: actualizar estado
+ 					consultar ordenes y confirmar estado
+	 	si orden de compra confirmada
+	 		si  existe orden stop lost
+	 			si orden pausada o descartada FIN 
+		 		si roden eenviada si respuesta: consulta ordenes y confirmar estado
+	 					si orden fue resivida actualizar: estado
+	 					si orden no fue recivida: reenviar
+	 				so orden enviada con respuesta error: reenviar
+	 				si orden enviada con respuesta ok: actualizar estado
+	 					consultar ordenes y confirmar estado
+		 	else no existe orden stop lost
+				crear orden
+				enviar roden
+				espera rdespuesta orden
+					sin respueta: consulta ordenes y confirmar estado
+	 					si orden fue resivida actualizar: estado
+	 					si orden no fue recivida: reenviar
+				so orden enviada con respuesta error: reenviar
+	 				si orden enviada con respuesta ok: actualizar estado
+	 					consultar ordenes y confirmar estado
+	else si trade esta cerrado
+ 		si existe orden asociada de venta
+ 			evaluar estado orden
+ 				si orden de venta confirmada FIN
+ 				si orden pausada o descartada FIN
+ 				si orden registrada: enviar
+ 				si roden eenviada si respuesta: consulta ordenes y confirmar estado
+ 					si orden fue resivida actualizar: estado
+ 					si orden no fue recivida: reenviar
+ 				so orden enviada con respuesta error: reenviar 
+ 				si orden enviada con respuesta ok: actualizar estado
+ 					consultar ordenes y confirmar estado
+		else no existe orden de venta
+			crear orden
+			enviar roden
+			espera rdespuesta orden
+				sin respueta: consulta ordenes y confirmar estado
+ 					si orden fue resivida actualizar: estado
+ 					si orden no fue recivida: reenviar
+				so orden enviada con respuesta error: reenviar
+	 				si orden enviada con respuesta ok: actualizar estado
+	 					consultar ordenes y confirmar estado
+	 	
+
+'''
+
 # enviar orden de compra (market, limit, date limit)
-# enviar orden de stoplost (market)
+# enviar orden de stoplost (market) (cancelar orden de totallost)
 # enviar orden de totallost (market)
 # enviar orden de venta (market, limit, date limit)
 # enviar cancelacion de orden

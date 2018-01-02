@@ -221,9 +221,10 @@ class DBAdapter:
         #combertir el balance a un porcentaje entre -100% y 100%
         BalanceHistory['balanceRatio'] = (BalanceHistory['balanceRatio'] - 0.5)* 2 * 100 # lo trasnformo a un valor poercentual entre -100 y +100
 
-        BalanceHistory['volbuy'] = BalanceHistory['volbuy'] / BalanceHistory['close']
-        BalanceHistory['volsell'] = BalanceHistory['volsell'] / BalanceHistory['close']
-        BalanceHistory['unbalance'] = BalanceHistory['unbalance'] / BalanceHistory['close']
+        avgClose =  BalanceHistory['close'].mean()
+        BalanceHistory['volbuy'] = BalanceHistory['volbuy'] /  avgClose
+        BalanceHistory['volsell'] = BalanceHistory['volsell'] /  avgClose
+        BalanceHistory['unbalance'] = BalanceHistory['unbalance'] /     avgClose
 
         #calcular %CH, %CH Acum , SMA %CH Acum
         BalanceHistory['change'] = BalanceHistory['close'].pct_change(periods=1)*100

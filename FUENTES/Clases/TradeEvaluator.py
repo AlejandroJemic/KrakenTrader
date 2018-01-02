@@ -82,10 +82,10 @@ class OpenCloseValues:
     '''
     volPriceOpen  = 50000          # monto en moneda que debe mover moverse para abir una operacion
     chOpen = 0.4                   # % de cambio para abrir una operacion
-    mbOpen = 1.05                  # indicador BalanceHistory.unbalance para abrir una operacion
+    mbOpen = 0.6                   # indicador BalanceHistory.unbalance para abrir una operacion
     deltaCHObjetivo = 20           # % cambio objetibo, lo se que espera ganar
-    chClose = 1                    # % cambio para corte de perdidas si se alcanso la base
-    deltaTotalLoseCH = 0.5           # % cambio para corde de perdidas si no se alcanso la base
+    chClose = 2                    # % cambio para corte de perdidas si se alcanso la base
+    deltaTotalLoseCH = 1.5         # % cambio para corde de perdidas si no se alcanso la base
     waitPeriods = 60               # cuando la operacion esta abierta y se alcanso la base, se espera periodos=waitPeriods * waitFactor
     waitFactor = 48
     waitPeriodsOutBase = 60        # cuando la operacion esta abierta fuera de base, se espera periodos=waitPeriodsOutBase * waitFactorOutBase
@@ -174,12 +174,24 @@ class TradeEvaluator:
                 if pfin > 0:
                     bh2['cum_change'] = bh2['change'].cumsum()
                     cumch = bh2['cum_change']
+
+                    bh2['EWM_unbalance'] =  bh2["unbalance"].ewm(span=3).mean()
+
+                    #calcular la porsiocn negativa (para mostrar en rojo en el grafico)
+                    bh2['EWM_unbalance_N'] = bh2['EWM_unbalance']
+                    neg = bh2['EWM_unbalance_N']
+                    neg[neg >= 0] = np.nan
+                    bh2['EWM_unbalance_N'] = neg
+
+                    cumUnbalanceP =  bh2['EWM_unbalance'].cumsum()
+                    cumUnbalanceN =  bh2['EWM_unbalance_N'].cumsum()
+
                     LogEvent('cumch '+ str(round(cumch[pfin],3)))
-                    if (cumch[pfin] >= OCV.cumCHIncrement):
+                    if (cumch[pfin] >= OCV.cumCHIncrement) | (cumUnbalanceP[pfin] >= (cumUnbalanceN[pfin] * -1 * 1.5)) :
                         isUpTrend = True
-                        LogEvent('isUpTrend ' + str(isUpTrend))
+                    LogEvent('isUpTrend ' + str(isUpTrend))
         except:
-            dbg.set_trace()
+            # dbg.set_trace()
             raise
         return isUpTrend
     
