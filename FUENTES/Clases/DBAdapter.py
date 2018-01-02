@@ -371,3 +371,40 @@ class DBAdapter:
             LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
         finally:
             session.close()
+
+
+    def OrdersReadForTrade(self, idTrade):
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+        oOrder = Orders()
+        try:
+            cant = session.query(Orders).count()
+            if cant > 0 :
+                oOrder = session.query(Orders).filter(Orders.idTrade == idTrade)
+                session.expunge(oOrder)
+            else:
+                oOrder = None
+            session.commit()
+        except:
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
+        finally:
+            session.close()
+        return oOrder
+
+    def OrdersReadLastForTrade(self, idTrade):
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+        oOrder = Orders()
+        try:
+            cant = session.query(Orders).count()
+            if cant > 0 :
+                oOrder = session.query(Orders).filter(Orders.idTrade == idTrade).order_by(Orders.idOrder.desc()).first()
+                session.expunge(oOrder)
+            else:
+                oOrder = None
+            session.commit()
+        except:
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
+        finally:
+            session.close()
+        return oOrder
