@@ -79,11 +79,13 @@ estados 3D, algun tipo de error
 39:   error generico en ejecucion de la orden, puede se en cualquier etapa
 
 '''
-
+from DTO import *
 from DBAdapter import *
 from TradeEvaluator import *
 from Utils import *
 import sys
+
+minDate = datetime(1900, 1, 1, 0, 0, 0)
 
 
 # ================================================================================================================
@@ -96,7 +98,7 @@ class OrderValues:
     idOrder               = 0                             # Integer      # Id local de la orden 
     OrderTime             = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # fecha hora de ingreso al sistema
     AgentCode             = 'KRAKEN'                      # String       # agente al que coresponden
-    CoinCode              = 'XBT'                         # String       # cryptomoneda a la que coresponden
+    PairCode              = 'XXBTZUSD'                    # String       # cryptomoneda a la que coresponden
     ClosingPrice          = 0.0                           # Float        # precio considerado en el envio
     Vol                   =  0.0                          # Float        # volumen en la moneda de la orden
     PriceVolValue         = 0.0                           # Float        # valor  CALCULADO orden(precio crypto/USD * volumen a ejecurar, segun el precio considerado)
@@ -114,7 +116,7 @@ class OrderValues:
     SpreadPriceVolValue   = 0.0                           # Float        # spread valor calculado - Valor Ejcuctado
     DelayTime             = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # deley ejecucion (en segundos) 
     IsConditional         = 0                             # Integer      # flag es inmediata o condicional
-    OrderType             = 0                             # Integer      # tipo de orden: compra market, compra limit/datelimit , venta, market, venta limit/datelimit , stoplost, totallost, salvarganancia, 
+    OrderType             = 0                             # Integer      # tipo de orden: 1 compra market, 2 compra limit , 3 venta market, 4 venta limit , 5 stoplost, 6 totallost
     OrderState            = 0                             # Integer      # estado de la orden
     PrevState             = 0                             # Integer      # estado anterior
     OrderStateTime        = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # fecha ultimo estado
@@ -132,7 +134,7 @@ class OrderHistoryValues:
     idOrder           = 0                             # Integer  # Id local de la orden 
     idOrderAgent      = ''                            # String   # id asignado por el agente ( si existe)
     AgentCode         = 'KRAKEN'                      # String   # Broker corespondiente
-    CoinCode          = 'XBT'                         # String   # Cryptomoneda
+    PairCode          = 'XXBTZUSD'                    # String   # Cryptomoneda
     OrderState        = 0                             # Integer  # id estado
     OrderStateTime    = datetime(1900, 1, 1, 0, 0, 0) # DateTime # fecha hora del ultimo estado
     PrevState         = 0                             # Integer  # id estado anterior
@@ -150,11 +152,12 @@ from Utils import *
 import sys
 
  class OrderManager:
-     SendOrdersEnabled = True # hablita o deshabilita el envio general de ordenes
-     AgentOrderManager = None # instancia del ordersManager corespondiente al agente
+    SendOrdersEnabled = True # hablita o deshabilita el envio general de ordenes
+    AgentOrderManager = None # instancia del ordersManager corespondiente al agente
 
+    lastOrden = 0
 
-    def __init__(self, pAgentCode):
+    def __init__(self, pAgentCode='KRAKEN'):
         if pAgentCode == 'KRAKEN':
             self.SendOrdersEnabled = True
             self.AgentOrderManager = KRAKENOrderManager(self.SendOrdersEnabled) # TO-DO: SE DEBE HACER DINAICO CUANDO SE INCORPOREN NUEVOS AGENTES
@@ -166,46 +169,92 @@ import sys
         self.SendOrdersEnabled = pHabilitar
 
 
-    def ReadLastTrade(self):
+    def ReadLastTrade(self, DBA):
         # leer el ultimo trade generado
-        DBA = DBAdapter()
+        # DBA = DBAdapter()
         oTrade = None
         try:
             oTrade = DBA.MyTradesReadLast() # returns type Mytrades
         except:
             LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
         finally:
-            DBA = None
+            # DBA = None
         return oTrade
 
 
-    def OrdersReadForTrade(idTRade):
+    def OrdersReadForTrade(self, idTRade, DBA):
         # leer las ordenes asociadas a un trade (debuelve una lista de ordenes)
-        DBA = DBAdapter()
+        # DBA = DBAdapter()
         oOrder = None
         try:
             oOrder = DBA.OrdersReadForTrade(idTRade) # returns type DTO.Orders list (many rows in bbdd)
         except:
             LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
         finally:
-            DBA = None
+            # DBA = None
         return oOrder
 
 
-    def OrdersReadLastForTrade(idTRade):
+    def OrdersReadLastForTrade(self, idTRade, DBA):
         # leer la ultima orden asociadas a un trade (debuelve la ultima orden creada para el trade)
-        DBA = DBAdapter()
+        # DBA = DBAdapter()
         oOrder = None
         try:
             oOrder = DBA.OrdersReadLastForTrade(idTRade) # returns type DTO.Orders  (1 row in bbdd)
         except:
             LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
         finally:
-            DBA = None
+            # DBA = None
         return oOrder
 
 
+# ======================================================================================================================================
+
+    def OrdersInsertOne(self, oMytrade, DBA):
+        # Inserta UnaOrden en bbdd en el estado inicial del flujo
+        # DBA = DBAdapter()
+        oOrderValues = OrderValues()
+        oOrderValues.idTrade               = oMytrade.id 
+        oOrderValues.idOrder               = self.lastOrden + 1
+        oOrderValues.OrderTime             = oMytrade.OrderTime
+        # default oOrderValues.AgentCode   = oMytrade.AgentCode
+        # default oOrderValues.PairCode    = oMytrade.PairCode
+        oOrderValues.ClosingPrice          = oMytrade.ClosingPrice
+        oOrderValues.Vol                   = oMytrade.Vol
+        oOrderValues.PriceVolValue         = oMytrade.PriceVolValue
+        oOrderValues.ComisionPersent       = oMytrade.ComisionPersent
+        oOrderValues.ComisionAmount        = oMytrade.ComisionAmount
+        
+        
+        
+        oOrderValues.VolAgent              = oMytrade.VolAgent
+        oOrderValues.PriceVolValueAgent    = oMytrade.PriceVolValueAgent
+        oOrderValues.ComisionPersent       = oMytrade.ComisionPersent
+        oOrderValues.ComisionAmountAgent   = oMytrade.ComisionAmountAgent
+        oOrderValues.SpreadComisionPersent = oMytrade.SpreadComisionPersent
+        oOrderValues.SpreadComisionAmount  = oMytrade.SpreadComisionAmount
+        oOrderValues.SpreadPriceVolValue   = oMytrade.SpreadPriceVolValue
+        oOrderValues.DelayTime             = oMytrade.DelayTime
+        oOrderValues.IsConditional         = oMytrade.IsConditional
+        oOrderValues.OrderType             = oMytrade.OrderType
+        oOrderValues.OrderState            = oMytrade.OrderState
+        oOrderValues.PrevState             = oMytrade.PrevState
+        oOrderValues.OrderStateTime        = oMytrade.OrderStateTime
+        oOrderValues.PrevStateTime         = oMytrade.PrevStateTime
+        
+        oOrder = Orders(oOrderValues)
+        try:
+            DBA.OrdersInsertOne(oOrder) # returns type DTO.Orders  (1 row in bbdd)
+        except:
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
+        finally:
+            # DBA = None
+        return
+
+# ========================================================================================================================================
+
     def EnviarOrden(self, OrderType):
+    	# envia una orden generica al agente instanciado
         if self.SendOrdersEnabled == True:
             self.AgentOrderManager.EnviarOrden(OrderType)
             raise NotImplementedError("To be implemented")
@@ -226,84 +275,105 @@ import sys
 # Llebar un historial del estado y flujo de una orden, debe contener, el texto envioado al aajente y la respuesta del mismo.
 # reportar estado de ordenes enviadas, pendientes, ejecutadas, canceladas, por medio de mails
 # entergar links de acciones alternatibas de ordenes segun el estado y sus alternativas
-# reevaluar si coresponde enviar, reenviar, anular localmente, o solicitar la cancelacion una orden  al agente
 
 
-    def GestionarOrdenes(self):
+
+    def GestionarOrdenes(self, DBA):
+    	# EVALUAR, reevaluar si coresponde enviar, reenviar, anular localmente, o solicitar la cancelacion una orden  al agente
         # gestiona el workFlow de las ordenes para los trades en curso
         try:
-            
+            oMytrade =  self.ReadLastTrade(DBA)
+            if oMytrade is None:
+            	LogEvent('Sin trades para gestionar ordenes. FIN')
+                return
+            else:
+            	LogEvent('Find last trade: ' + str(oMytrade.id))
+                oOrders = self.OrdersReadForTrade(oMytrade.id, DBA)
+                if oMytrade.closeTime == minDate: # trade abierto
+                	if len(oOrders) = 0:
+                		LogEvent('Sin Ordenes')
+                		# isert Orden
+                	else:
+                		LogEvent('Existen Ordenes')
+                		for Orden in oOrders:
+                			if Orden.OrderState in [1,2]: # tipo de orden: 1 compra market, 2 compra limit , 3 venta market, 4 venta limit , 5 stoplost, 6 totallost
+                				LogEvent('Encontrada Orden de compra nro: {0}'.format(Orden.idOrder))
+                	                				
+
+
+
+            	else: #EL TRADE ESTA CERRADO
         except:
             LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
 '''
 work flow ordenes
- 1° leer ultimo trade
-         si no hay trades FIN
-         else si hay trade
-             leer ordenes asociadas al trade
-     si trade esta abierto
-         si existe orden asociada de compra
-             evaluar estado orden
-                 si orden pausada o descartada FIN
-                 si orden registrada: enviar
-                 si roden eenviada si respuesta: consulta ordenes y confirmar estado
-                     si orden fue resivida actualizar: estado
-                     si orden no fue recivida: reenviar
-                 so orden enviada con respuesta error: reenviar
-                 si orden enviada con respuesta ok: actualizar estado
-                     consultar ordenes y confirmar estado
-        else no existe orden
-            crear orden
-            enviar roden
-            espera rdespuesta orden
-                sin respueta: consulta ordenes y confirmar estado
-                     si orden fue resivida actualizar: estado
-                     si orden no fue recivida: reenviar
-            so orden enviada con respuesta error: reenviar
-                 si orden enviada con respuesta ok: actualizar estado
-                     consultar ordenes y confirmar estado
-         si orden de compra confirmada
-             si  existe orden stop lost
-                 si orden pausada o descartada FIN 
-                 si roden eenviada si respuesta: consulta ordenes y confirmar estado
-                         si orden fue resivida actualizar: estado
-                         si orden no fue recivida: reenviar
-                     so orden enviada con respuesta error: reenviar
-                     si orden enviada con respuesta ok: actualizar estado
-                         consultar ordenes y confirmar estado
-             else no existe orden stop lost
-                crear orden
-                enviar roden
-                espera rdespuesta orden
-                    sin respueta: consulta ordenes y confirmar estado
-                         si orden fue resivida actualizar: estado
-                         si orden no fue recivida: reenviar
-                so orden enviada con respuesta error: reenviar
-                     si orden enviada con respuesta ok: actualizar estado
-                         consultar ordenes y confirmar estado
-    else si trade esta cerrado
-         si existe orden asociada de venta
-             evaluar estado orden
-                 si orden de venta confirmada FIN
-                 si orden pausada o descartada FIN
-                 si orden registrada: enviar
-                 si roden eenviada si respuesta: consulta ordenes y confirmar estado
-                     si orden fue resivida actualizar: estado
-                     si orden no fue recivida: reenviar
-                 so orden enviada con respuesta error: reenviar 
-                 si orden enviada con respuesta ok: actualizar estado
-                     consultar ordenes y confirmar estado
-        else no existe orden de venta
-            crear orden
-            enviar roden
-            espera rdespuesta orden
-                sin respueta: consulta ordenes y confirmar estado
-                     si orden fue resivida actualizar: estado
-                     si orden no fue recivida: reenviar
-                so orden enviada con respuesta error: reenviar
-                     si orden enviada con respuesta ok: actualizar estado
-                         consultar ordenes y confirmar estado
-         
+ > 1° leer ultimo trade 
+        > si no hay trades FIN 
+        > else si hay trade 
+        >   leer ordenes asociadas al trade 
+		>   si trade esta abierto
+		>         si existe orden asociada de compra
+		             evaluar estado orden
+		                 si orden pausada o descartada FIN
+		                 si orden registrada: enviar
+		                 si roden eenviada si respuesta: consulta ordenes y confirmar estado
+		                     si orden fue resivida actualizar: estado
+		                     si orden no fue recivida: reenviar
+		                 so orden enviada con respuesta error: reenviar
+		                 si orden enviada con respuesta ok: actualizar estado
+		                     consultar ordenes y confirmar estado
+		>       else no existe orden
+		            crear orden
+		            enviar roden
+		            espera rdespuesta orden
+		                sin respueta: consulta ordenes y confirmar estado
+		                     si orden fue resivida actualizar: estado
+		                     si orden no fue recivida: reenviar
+		            so orden enviada con respuesta error: reenviar
+		                 si orden enviada con respuesta ok: actualizar estado
+		                     consultar ordenes y confirmar estado
+		         si orden de compra confirmada
+		             si  existe orden stop lost
+		                 si orden pausada o descartada FIN 
+		                 si roden eenviada si respuesta: consulta ordenes y confirmar estado
+		                         si orden fue resivida actualizar: estado
+		                         si orden no fue recivida: reenviar
+		                     so orden enviada con respuesta error: reenviar
+		                     si orden enviada con respuesta ok: actualizar estado
+		                         consultar ordenes y confirmar estado
+		             else no existe orden stop lost
+		                crear orden
+		                enviar roden
+		                espera rdespuesta orden
+		                    sin respueta: consulta ordenes y confirmar estado
+		                         si orden fue resivida actualizar: estado
+		                         si orden no fue recivida: reenviar
+		                so orden enviada con respuesta error: reenviar
+		                     si orden enviada con respuesta ok: actualizar estado
+		                         consultar ordenes y confirmar estado
+		>    else si trade esta cerrado
+		         si existe orden asociada de venta
+		             evaluar estado orden
+		                 si orden de venta confirmada FIN
+		                 si orden pausada o descartada FIN
+		                 si orden registrada: enviar
+		                 si roden eenviada si respuesta: consulta ordenes y confirmar estado
+		                     si orden fue resivida actualizar: estado
+		                     si orden no fue recivida: reenviar
+		                 so orden enviada con respuesta error: reenviar 
+		                 si orden enviada con respuesta ok: actualizar estado
+		                     consultar ordenes y confirmar estado
+		        else no existe orden de venta
+		            crear orden
+		            enviar roden
+		            espera rdespuesta orden
+		                sin respueta: consulta ordenes y confirmar estado
+		                     si orden fue resivida actualizar: estado
+		                     si orden no fue recivida: reenviar
+		                so orden enviada con respuesta error: reenviar
+		                     si orden enviada con respuesta ok: actualizar estado
+		                         consultar ordenes y confirmar estado
+		         
 
 '''
 

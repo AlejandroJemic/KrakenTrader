@@ -98,7 +98,7 @@ class Orders(Base):
     idOrder =               Column(Integer, primary_key=True, nullable=False)      # Id local de la orden 
     OrderTime =             Column(DateTime, nullable=False)   # fecha hora de ingreso al sistema
     AgentCode =             Column(String, nullable=True)      # agente al que coresponden
-    CoinCode =              Column(String, nullable=True)      # cryptomoneda a la que coresponden
+    PairCode =              Column(String, nullable=True)      # par de monedas   que coresponden a la orden
     ClosingPrice =          Column(Float, nullable=True)       # precio considerado en el envio
     Vol =                   Column(Float, nullable=True)       # volumen en la moneda de la orden
     PriceVolValue =         Column(Float, nullable=True)       # valor  CALCULADO orden(precio crypto/USD * volumen a ejecurar, segun el precio considerado)
@@ -116,7 +116,7 @@ class Orders(Base):
     SpreadPriceVolValue =   Column(Float, nullable=True)       # spread valor calculado - Valor Ejcuctado
     DelayTime =             Column(DateTime, nullable=True)    # deley ejecucion (en segundos) 
     IsConditional =         Column(Integer, nullable=True)     # flag es inmediata o condicional
-    OrderType =             Column(Integer, nullable=True)     # tipo de orden: compra market, compra limit/datelimit , venta, market, venta limit/datelimit , stoplost, totallost, salvarganancia, 
+    OrderType =             Column(Integer, nullable=True)     # tipo de orden: 1 compra market, 2 compra limit , 3 venta market, 4 venta limit , 5 stoplost, 6 totallost
     OrderState =            Column(Integer, nullable=True)     # estado de la orden
     PrevState =             Column(Integer, nullable=True)     # estado anterior
     OrderStateTime =        Column(DateTime, nullable=True)    # fecha ultimo estado
@@ -124,12 +124,12 @@ class Orders(Base):
     CancelationTime =       Column(DateTime, nullable=True)    # fecha hora de cancelacion de la orden
     CancelationDesc =       Column(DateTime, nullable=True)    # motivo de cancelacion descriptivo
 
-    def __init__(self, oOrder):
+    def __init__(self, oOrder): # oOrder is of type OrderValues
         self.idTrade               = oOrder.idTrade 
         self.idOrder               = oOrder.idOrder
         self.OrderTime             = oOrder.OrderTime
         self.AgentCode             = oOrder.AgentCode
-        self.CoinCode              = oOrder.CoinCode
+        self.PairCode              = oOrder.PairCode
         self.ClosingPrice          = oOrder.ClosingPrice
         self.Vol                   = oOrder.Vol
         self.PriceVolValue         = oOrder.PriceVolValue
@@ -170,7 +170,7 @@ class OrdersHistory(Base):
     SentJson =          Column(String, nullable=True)    # json enviado
     ResivedJson =       Column(String, nullable=True)    # json recivido
 
-    def __init__(self, oOrderHistory): 
+    def __init__(self, oOrderHistory):  # oOrderHistory is of type OrderHistoryValues
         self.idTrade           = oOrderHistory.idTrade          
         self.idOrder           = oOrderHistory.idOrder          
         self.idOrderAgent      = oOrderHistory.idOrderAgent

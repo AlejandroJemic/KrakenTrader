@@ -408,3 +408,18 @@ class DBAdapter:
         finally:
             session.close()
         return oOrder
+
+
+    def MytradesInsertOne(self, oOrder):
+        '''
+        inserta una fila en la tabla Orders a partir d eun objeto Order por medio de SQLalchemy
+        '''
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+        try:
+            session.add(oOrder)
+            session.commit()
+        except:
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
+        finally:
+            session.close()
