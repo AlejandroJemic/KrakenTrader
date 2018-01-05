@@ -41,7 +41,7 @@ reevaluar si coresponde enviar, reenviar, anular localmente, o solicita rla canc
 ============================================================
 las ordenes pueden tener los siguintes estados
 ============================================================
-IdEstadoOrden: 
+IdEstadoOrden:
 estados 1D, la orden permanece local
 10:   orden ingresada local, (aun no informada al agente)
 11:   orden pausada( orden se considera valida pero por algun motivo se decidio no enviarla al agente, requiere confirmacion para envio)
@@ -64,7 +64,7 @@ estados 2D, la orden se envio al agente
 29:   CONCELACION DE ORDEN EJECUTADA CON EXITO Y CONFIRMADA por medio de una consulta adicional al agente
 
 estados 3D, algun tipo de error
-30:      error durante el envio de una orden al agente, se deconose si fue recivida o no, 
+30:      error durante el envio de una orden al agente, se deconose si fue recivida o no,
          se recomienda enviar una consulta para validar el estado de la orden
          implica reenviar si es viable y corresponde
 31:      agente reporto error al recivir orden,la orden no se cursara, implica reenviar si es viable o coresponde
@@ -73,7 +73,7 @@ estados 3D, algun tipo de error
 
 33:   ERROR DURANTE EL ENVIO DE UNA CANCELACION DE ORDEN , se deconose si fue resivida y cancelada por el agente o no.
             se recomienda envia run aconsulta del estado de la orden inicial , y resolicita rla canselacio si es necesario
-34:   AGENTE REPORTO ERROR DURANTE EL PEDIDO DE CANCELACION DE UNA ORDEN. 
+34:   AGENTE REPORTO ERROR DURANTE EL PEDIDO DE CANCELACION DE UNA ORDEN.
             se recomienda enviar un aconsulta del estado de la orden inicial , y resolicita rla canselacio si es necesario
 
 39:   error generico en ejecucion de la orden, puede se en cualquier etapa
@@ -87,25 +87,24 @@ import sys
 
 minDate = datetime(1900, 1, 1, 0, 0, 0)
 
-
 # ================================================================================================================
 # class OrderValues
 # representa los valores de una orden que esta siendo gestionada
 # ================================================================================================================
 class OrderValues:
-    
+
     idTrade               = 0                             # Integer      # Id del trade al que coresponden
-    idOrder               = 0                             # Integer      # Id local de la orden 
-    OrderTime             = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # fecha hora de ingreso al sistema
+    idOrder               = 0                             # Integer      # Id local de la orden
+    OrderTime             = minDate                       # DateTime     # fecha hora de ingreso al sistema
     AgentCode             = 'KRAKEN'                      # String       # agente al que coresponden
     PairCode              = 'XXBTZUSD'                    # String       # cryptomoneda a la que coresponden
     Price                 = 0.0                           # Float        # precio considerado en el envio
-    Vol                   =  0.0                          # Float        # volumen en la moneda de la orden
+    Vol                   = 0.0                           # Float        # volumen en la moneda de la orden
     PriceVolValue         = 0.0                           # Float        # valor  CALCULADO orden(precio crypto/USD * volumen a ejecurar, segun el precio considerado)
     ComisionPersent       = 0.0                           # Float        # % comicion calculado
     ComisionAmount        = 0.0                           # Float        # USD comicion calculada
-    idOrderAgent          = ""                            # String       # Id asignado por el agente 
-    OrderTimeAgent        = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # fecha hora de confirmacion
+    idOrderAgent          = ""                            # String       # Id asignado por el agente
+    OrderTimeAgent        = minDate                       # DateTime     # fecha hora de confirmacion
     PriceAgent            = 0.0                           # Float        # precio confirmado por el agente al cual se ejecuto
     VolAgent              = 0.0                           # Float        # volumen ejecutado por el agente
     PriceVolValueAgent    = 0.0                           # Float        # valor  EJECUTADO orden(precio crypto/USD ejc * volumen a ejecutado, segun el precio informado por el egente)
@@ -114,15 +113,15 @@ class OrderValues:
     SpreadComisionPersent = 0.0                           # Float        # spread % comicion
     SpreadComisionAmount  = 0.0                           # Float        # spread USD ajecucion
     SpreadPriceVolValue   = 0.0                           # Float        # spread valor calculado - Valor Ejcuctado
-    DelayTime             = 0                             # DateTime     # deley ejecucion (en segundos) 
+    DelayTime             = 0                             # DateTime     # deley ejecucion (en segundos)
     IsConditional         = 0                             # Integer      # flag es inmediata o condicional
     OrderType             = 0                             # Integer      # tipo de orden: 1 compra market, 2 compra limit , 3 venta market, 4 venta limit , 5 stoplost, 6 totallost
     OrderState            = 0                             # Integer      # estado de la orden
     PrevState             = 0                             # Integer      # estado anterior
-    OrderStateTime        = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # fecha ultimo estado
-    PrevStateTime         = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # fecha estado anterior
-    CancelationTime       = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # fecha hora de cancelacion de la orden
-    CancelationDesc       = datetime(1900, 1, 1, 0, 0, 0) # DateTime     # motivo de cancelacion descriptivo
+    OrderStateTime        = minDate                       # DateTime     # fecha ultimo estado
+    PrevStateTime         = minDate                       # DateTime     # fecha estado anterior
+    CancelationTime       = minDate                       # DateTime     # fecha hora de cancelacion de la orden
+    CancelationDesc       = minDate                       # DateTime     # motivo de cancelacion descriptivo
 
 # ================================================================================================================
 # class OrderHistoryValues
@@ -131,14 +130,14 @@ class OrderValues:
 # ================================================================================================================
 class OrderHistoryValues:
     idTrade           = 0                             # Integer  # Id del trade al que coresponde
-    idOrder           = 0                             # Integer  # Id local de la orden 
+    idOrder           = 0                             # Integer  # Id local de la orden
     idOrderAgent      = ''                            # String   # id asignado por el agente ( si existe)
     AgentCode         = 'KRAKEN'                      # String   # Broker corespondiente
     PairCode          = 'XXBTZUSD'                    # String   # Cryptomoneda
     OrderState        = 0                             # Integer  # id estado
-    OrderStateTime    = datetime(1900, 1, 1, 0, 0, 0) # DateTime # fecha hora del ultimo estado
+    OrderStateTime    = minDate                       # DateTime # fecha hora del ultimo estado
     PrevState         = 0                             # Integer  # id estado anterior
-    PrevStateTime     = datetime(1900, 1, 1, 0, 0, 0) # DateTime # fecha ora estado anterior
+    PrevStateTime     = minDate                       # DateTime # fecha ora estado anterior
     StateChangeMotive = ''                            # String   # motivo del cambio de estado
     SentJson          = 0.0                           # Float    # json enviado
     ResivedJson       = 0.0                           # Float    # json recivido
@@ -149,7 +148,7 @@ class OrderHistoryValues:
 
 
 
- class OrderManager:
+class OrderManager:
     SendOrdersEnabled = True # hablita o deshabilita el envio general de ordenes
     AgentOrderManager = None # instancia del ordersManager corespondiente al agente
 
@@ -161,8 +160,8 @@ class OrderHistoryValues:
             self.AgentOrderManager = KRAKENOrderManager(self.SendOrdersEnabled) # TO-DO: SE DEBE HACER DINAICO CUANDO SE INCORPOREN NUEVOS AGENTES
             self.AgentCode         = self.AgentOrderManager.AgentCode
 
-    
-    def HabilitarEnvioOrdenes(pHabilitar = True):
+
+    def HabilitarEnvioOrdenes(pHabilitar=True):
         # considerar flag de interrumpion envio de ordenes al gente, ( no enviar mas compras, no enviar mas ventas independientes)
         self.SendOrdersEnabled = pHabilitar
 
@@ -174,22 +173,18 @@ class OrderHistoryValues:
         try:
             oTrade = DBA.MyTradesReadLast() # returns type Mytrades
         except:
-            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
-        finally:
-            # DBA = None
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]), True)
         return oTrade
 
 
     def OrdersReadForTrade(self, idTRade, DBA):
         # leer las ordenes asociadas a un trade (debuelve una lista de ordenes)
-        # DBA = DBAdapter()
+        # DBA = DBAdapter()|
         oOrder = None
         try:
             oOrder = DBA.OrdersReadForTrade(idTRade) # returns type DTO.Orders list (many rows in bbdd)
         except:
-            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
-        finally:
-            # DBA = None
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]), True)
         return oOrder
 
 
@@ -200,9 +195,7 @@ class OrderHistoryValues:
         try:
             oOrder = DBA.OrdersReadLastForTrade(idTRade) # returns type DTO.Orders  (1 row in bbdd)
         except:
-            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
-        finally:
-            # DBA = None
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]), True)
         return oOrder
 
 
@@ -213,7 +206,7 @@ class OrderHistoryValues:
 
         # DBA = DBAdapter()
         oOrderValues = OrderValues()
-        oOrderValues.idTrade               = oMytrade.id 
+        oOrderValues.idTrade               = oMytrade.id
         oOrderValues.idOrder               = self.lastOrden + 1
         oOrderValues.OrderTime             = oMytrade.OrderTime
         # default oOrderValues.AgentCode   = oMytrade.AgentCode
@@ -223,7 +216,7 @@ class OrderHistoryValues:
         oOrderValues.PriceVolValue         = oMytrade.PriceVolValue
         oOrderValues.ComisionPersent       = TradeEvaluator.TradeEvaluator.comCompra + TradeEvaluator.TradeEvaluator.spreadEntrada
         oOrderValues.ComisionAmount        = oOrderValues.Price * oOrderValues.ComisionPersent
-        
+
         oOrderValues.PriceAgent            = 0
         oOrderValues.VolAgent              = 0
         oOrderValues.PriceVolValueAgent    = 0
@@ -240,26 +233,24 @@ class OrderHistoryValues:
         oOrderValues.PrevState             = None
         oOrderValues.OrderStateTime        = datetime.now()
         oOrderValues.PrevStateTime         = None
-        
+
         oOrder = Orders(oOrderValues)
         try:
             DBA.OrdersInsertOne(oOrder) # returns type DTO.Orders  (1 row in bbdd)
             LogEvent('Orden Grabada en BBDD')
         except:
-            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
-        finally:
-            # DBA = None
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]), True)
         return
 
 # ========================================================================================================================================
 
     def EnviarOrden(self, OrderType):
         # envia una orden generica al agente instanciado
-        if self.SendOrdersEnabled == True:
+        if self.SendOrdersEnabled is True:
             self.AgentOrderManager.EnviarOrden(OrderType)
             raise NotImplementedError("To be implemented")
         return False
-  
+
 # enviar orden de compra (market, limit, date limit)
 # enviar orden de stoplost (market) (cancelar orden de totallost)
 # enviar orden de totallost (market)
@@ -281,7 +272,7 @@ class OrderHistoryValues:
         # EVALUAR, reevaluar si coresponde enviar, reenviar, anular localmente, o solicitar la cancelacion una orden  al agente
         # gestiona el workFlow de las ordenes para los trades en curso
         try:
-            oMytrade =  self.ReadLastTrade(DBA)
+            oMytrade = self.ReadLastTrade(DBA)
             if oMytrade is None:
                 LogEvent('Sin trades para gestionar ordenes. FIN')
                 return
@@ -289,38 +280,38 @@ class OrderHistoryValues:
                 LogEvent('Find last trade: ' + str(oMytrade.id))
                 oOrders = self.OrdersReadForTrade(oMytrade.id, DBA)
                 if oMytrade.closeTime == minDate: # trade abierto
-                    if len(oOrders) = 0:
+                    if len(oOrders) == 0:
                         LogEvent('Sin Ordenes')
                         # insert Orden
-                        OrdersInsertOne(oMytrade, DBA, pEstadoOrden=10, pTipoOrden=1):
+                        OrdersInsertOne(oMytrade, DBA, pEstadoOrden=10, pTipoOrden=1)
                     else:
                         LogEvent('Existen Ordenes')
                         for Orden in oOrders:
-                            if Orden.OrderType in [1,2]: # tipo de orden: 1 compra market, 2 compra limit , 3 venta market, 4 venta limit , 5 stoplost, 6 totallost
+                            if Orden.OrderType in [1, 2]: # tipo de orden: 1 compra market, 2 compra limit , 3 venta market, 4 venta limit , 5 stoplost, 6 totallost
                                 LogEvent('Encontrada Orden de compra nro: {0}'.format(Orden.idOrder))
                                 Estdo = EvaluarFlujoOrden(DBA, Orden)
                                 if Orden.OrderState == 25:
                                     LogEvent('confirmada Orden de Compra')
-                                    # si orden confirmada 
+                                    # si orden confirmada
                                     # revisar existe orden stoplost
                                     # si no esxiste insertar
-                            elif Orden.OrderType in [5,6]: # tipo de orden: 1 compra market, 2 compra limit , 3 venta market, 4 venta limit , 5 stoplost, 6 totallost
+                            elif Orden.OrderType in [5, 6]: # tipo de orden: 1 compra market, 2 compra limit , 3 venta market, 4 venta limit , 5 stoplost, 6 totallost
                                 LogEvent('Encontrada Orden de stoplost nro: {0}'.format(Orden.idOrder))
                                 Estdo = EvaluarFlujoOrden(DBA, Orden)
                                 if Orden.OrderState == 25:
                                     LogEvent('confirmada Orden de stoplost')
-                else: #EL TRADE ESTA CERRADO
+                else: # EL TRADE ESTA CERRADO
         except:
-            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]), True)
 
 
     def EvaluarFlujoOrden(self, DBA, Orden):
-        while Orden.OrderState not in [25,29]:
-            if Orden.OrderState    == 10: #   orden ingresada local, (aun no informada al agente)
+        while Orden.OrderState not in [25, 29]:
+            if Orden.OrderState    == 10: # orden ingresada local, (aun no informada al agente)
                 # enviar orden
                 # actualizar orden si ese tiene los datos
                 # agregar historia orden si envio ok
-            if Orden.OrderState in [11,12]: #   orden pausada, orden descartada
+            if Orden.OrderState in [11, 12]: # orden pausada, orden descartada
                 # no hacer nada, dejar pasar
             if Orden.OrderState    == 13: #   orden cancelada localmente
                 # solicitar cancelacion orden
@@ -405,14 +396,16 @@ class OrderHistoryValues:
                 # SI orden no recivida enviar orden
                 # actualizar orden si ese tiene los datos
                 # agregar historia orden si envio ok
-        #end while
-        return Orden.OrderState 25
+        # end while
+        return Orden.OrderState
+
+
 '''
 work flow ordenes
- > 1° leer ultimo trade 
-        > si no hay trades FIN 
-        > else si hay trade 
-        >   leer ordenes asociadas al trade 
+ > 1° leer ultimo trade
+        > si no hay trades FIN
+        > else si hay trade
+        >   leer ordenes asociadas al trade
         >   si trade esta abierto
         >         si existe orden asociada de compra
         >           evaluar estado orden

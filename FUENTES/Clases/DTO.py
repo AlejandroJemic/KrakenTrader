@@ -1,7 +1,7 @@
 # DTO v1.0 17-12-217
 # incluyo clases DTOs para sqlalquemy
 
-from sqlalchemy import (create_engine, Column, Date, DateTime, Float, Integer, ForeignKey, String, Table, BigInteger, Text)
+from sqlalchemy import (create_engine, Column, DateTime, Float, Integer, String, BigInteger, Text)
 from sqlalchemy.ext.declarative import declarative_base
 
 dbInstance = 'sqlite:///../../BBDD/krakenTeader.db'
@@ -36,7 +36,7 @@ class TradesHistory(Base):
     buy_sell      = Column(String, nullable=False)
     market_limit  = Column(String)
     miscellaneous = Column(String)
-    time          = Column(DateTime,  primary_key=True)
+    time          = Column(DateTime, primary_key=True)
     volume        = Column(Float, nullable=False)
 
 
@@ -80,7 +80,7 @@ class MyTrades(Base):
         self.stopLoseCH       = oTradeValues.stopLoseCH
         self.TotalLoseCH      = oTradeValues.TotalLoseCH
         self.closingCH        = oTradeValues.closingCH
-        self.deltaCH          = oTradeValues.deltaCH 
+        self.deltaCH          = oTradeValues.deltaCH
         self.openingP         = oTradeValues.openingP
         self.baseP            = oTradeValues.baseP
         self.targetP          = oTradeValues.targetP
@@ -95,7 +95,7 @@ class MyTrades(Base):
 class Orders(Base):
     __tablename__ = 'Orders'
     idTrade =               Column(Integer, nullable=False)    # Id del trade al que coresponden
-    idOrder =               Column(Integer, primary_key=True, nullable=False)      # Id local de la orden 
+    idOrder =               Column(Integer, primary_key=True, nullable=False)      # Id local de la orden
     OrderTime =             Column(DateTime, nullable=False)   # fecha hora de ingreso al sistema
     AgentCode =             Column(String, nullable=True)      # agente al que coresponden
     PairCode =              Column(String, nullable=True)      # par de monedas   que coresponden a la orden
@@ -104,7 +104,7 @@ class Orders(Base):
     PriceVolValue =         Column(Float, nullable=True)       # valor  CALCULADO orden(precio crypto/USD * volumen a ejecurar, segun el precio considerado)
     ComisionPersent =       Column(Float, nullable=True)       # % comicion calculado
     ComisionAmount =        Column(Float, nullable=True)       # USD comicion calculada
-    idOrderAgent =          Column(String, nullable=True)      # Id asignado por el agente 
+    idOrderAgent =          Column(String, nullable=True)      # Id asignado por el agente
     OrderTimeAgent =        Column(DateTime, nullable=True)    # fecha hora de confirmacion
     PriceAgent =            Column(Float, nullable=True)       # precio confirmado por el agente al cual se ejecuto
     VolAgent =              Column(Float, nullable=True)       # volumen ejecutado por el agente
@@ -114,7 +114,7 @@ class Orders(Base):
     SpreadComisionPersent = Column(Float, nullable=True)       # spread % comicion
     SpreadComisionAmount =  Column(Float, nullable=True)       # spread USD ajecucion
     SpreadPriceVolValue =   Column(Float, nullable=True)       # spread valor calculado - Valor Ejcuctado
-    DelayTime =             Column(DateTime, nullable=True)    # deley ejecucion (en segundos) 
+    DelayTime =             Column(DateTime, nullable=True)    # deley ejecucion (en segundos)
     IsConditional =         Column(Integer, nullable=True)     # flag es inmediata o condicional
     OrderType =             Column(Integer, nullable=True)     # tipo de orden: 1 compra market, 2 compra limit , 3 venta market, 4 venta limit , 5 stoplost, 6 totallost
     OrderState =            Column(Integer, nullable=True)     # estado de la orden
@@ -125,7 +125,7 @@ class Orders(Base):
     CancelationDesc =       Column(DateTime, nullable=True)    # motivo de cancelacion descriptivo
 
     def __init__(self, oOrder): # oOrder is of type OrderValues
-        self.idTrade               = oOrder.idTrade 
+        self.idTrade               = oOrder.idTrade
         self.idOrder               = oOrder.idOrder
         self.OrderTime             = oOrder.OrderTime
         self.AgentCode             = oOrder.AgentCode
@@ -158,7 +158,7 @@ class Orders(Base):
 class OrdersHistory(Base):
     __tablename__ = 'OrdersHistory'
     idTrade =           Column(Integer, nullable=True)  # Id del trade al que coresponde
-    idOrder =           Column(Integer, primary_key=True, nullable=True)  # Id local de la orden 
+    idOrder =           Column(Integer, primary_key=True, nullable=True)  # Id local de la orden
     idOrderAgent =      Column(String, nullable=True)   # id asignado por el agente ( si existe)
     AgentCode =         Column(String, nullable=True)   # Broker corespondiente
     CoinCode =          Column(String, nullable=True)   # Cryptomoneda
@@ -171,15 +171,15 @@ class OrdersHistory(Base):
     ResivedJson =       Column(String, nullable=True)    # json recivido
 
     def __init__(self, oOrderHistory):  # oOrderHistory is of type OrderHistoryValues
-        self.idTrade           = oOrderHistory.idTrade          
-        self.idOrder           = oOrderHistory.idOrder          
+        self.idTrade           = oOrderHistory.idTrade
+        self.idOrder           = oOrderHistory.idOrder
         self.idOrderAgent      = oOrderHistory.idOrderAgent
-        self.AgentCode         = oOrderHistory.AgentCode        
-        self.CoinCode          = oOrderHistory.CoinCode   
-        self.OrderState        = oOrderHistory.OrderState       
+        self.AgentCode         = oOrderHistory.AgentCode
+        self.CoinCode          = oOrderHistory.CoinCode
+        self.OrderState        = oOrderHistory.OrderState
         self.OrderStateTime    = oOrderHistory.OrderStateTime
-        self.PrevState         = oOrderHistory.PrevState         
+        self.PrevState         = oOrderHistory.PrevState
         self.PrevStateTime     = oOrderHistory.PrevStateTime
         self.StateChangeMotive = oOrderHistory.StateChangeMotive
-        self.SentJson          = oOrderHistory.SentJson         
-        self.ResivedJson       = oOrderHistory.ResivedJson      
+        self.SentJson          = oOrderHistory.SentJson
+        self.ResivedJson       = oOrderHistory.ResivedJson
