@@ -183,13 +183,17 @@ class TradeEvaluator:
                     neg[neg >= 0] = np.nan
                     bh2['EWM_unbalance_N'] = neg
 
+                    # calcular la suma del unbalasce pos y neg
                     cumUnbalanceP =  bh2['EWM_unbalance'].cumsum()
                     cumUnbalanceN =  bh2['EWM_unbalance_N'].cumsum()
 
                     LogEvent('cumch '+ str(round(cumch[pfin],3)))
-                    if (cumch[pfin] >= OCV.cumCHIncrement) | (cumUnbalanceP[pfin] >= (cumUnbalanceN[pfin] * -1 * 1.5)) :
+                    if (cumch[pfin] >= OCV.cumCHIncrement):
                         isUpTrend = True
-                    LogEvent('isUpTrend ' + str(isUpTrend))
+                        LogEvent('isUpTrend by cumch' + str(isUpTrend))
+                    elif (cumUnbalanceP[pfin] >= (cumUnbalanceN[pfin] * -1 * 1.5)): #si existe un desbalance positivo moderado
+                        isUpTrend = True
+                        LogEvent('isUpTrend by cumUnbalanceP' + str(isUpTrend))
         except:
             # dbg.set_trace()
             raise

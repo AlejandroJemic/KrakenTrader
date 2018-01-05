@@ -99,17 +99,17 @@ class Orders(Base):
     OrderTime =             Column(DateTime, nullable=False)   # fecha hora de ingreso al sistema
     AgentCode =             Column(String, nullable=True)      # agente al que coresponden
     PairCode =              Column(String, nullable=True)      # par de monedas   que coresponden a la orden
-    ClosingPrice =          Column(Float, nullable=True)       # precio considerado en el envio
+    Price =                 Column(Float, nullable=True)       # precio considerado en el envio
     Vol =                   Column(Float, nullable=True)       # volumen en la moneda de la orden
     PriceVolValue =         Column(Float, nullable=True)       # valor  CALCULADO orden(precio crypto/USD * volumen a ejecurar, segun el precio considerado)
     ComisionPersent =       Column(Float, nullable=True)       # % comicion calculado
     ComisionAmount =        Column(Float, nullable=True)       # USD comicion calculada
     idOrderAgent =          Column(String, nullable=True)      # Id asignado por el agente 
     OrderTimeAgent =        Column(DateTime, nullable=True)    # fecha hora de confirmacion
-    ClosingPriceAgent =     Column(Float, nullable=True)       # precio confirmado por el agente al cual se ejecuto
+    PriceAgent =            Column(Float, nullable=True)       # precio confirmado por el agente al cual se ejecuto
     VolAgent =              Column(Float, nullable=True)       # volumen ejecutado por el agente
     PriceVolValueAgent =    Column(Float, nullable=True)       # valor  EJECUTADO orden(precio crypto/USD ejc * volumen a ejecutado, segun el precio informado por el egente)
-    ComisionPersent =       Column(Float, nullable=True)       # % comicion  informado
+    ComisionPersentAgent =  Column(Float, nullable=True)       # % comicion  informado
     ComisionAmountAgent =   Column(Float, nullable=True)       # USD comicion informado
     SpreadComisionPersent = Column(Float, nullable=True)       # spread % comicion
     SpreadComisionAmount =  Column(Float, nullable=True)       # spread USD ajecucion
@@ -130,17 +130,17 @@ class Orders(Base):
         self.OrderTime             = oOrder.OrderTime
         self.AgentCode             = oOrder.AgentCode
         self.PairCode              = oOrder.PairCode
-        self.ClosingPrice          = oOrder.ClosingPrice
+        self.Price                 = oOrder.Price
         self.Vol                   = oOrder.Vol
         self.PriceVolValue         = oOrder.PriceVolValue
         self.ComisionPersent       = oOrder.ComisionPersent
         self.ComisionAmount        = oOrder.ComisionAmount
         self.idOrderAgent          = oOrder.idOrderAgent
         self.OrderTimeAgent        = oOrder.OrderTimeAgent
-        self.ClosingPriceAgent     = oOrder.ClosingPriceAgent
+        self.PriceAgent            = oOrder.PriceAgent
         self.VolAgent              = oOrder.VolAgent
         self.PriceVolValueAgent    = oOrder.PriceVolValueAgent
-        self.ComisionPersent       = oOrder.ComisionPersent
+        self.ComisionPersentAgent  = oOrder.ComisionPersentAgent
         self.ComisionAmountAgent   = oOrder.ComisionAmountAgent
         self.SpreadComisionPersent = oOrder.SpreadComisionPersent
         self.SpreadComisionAmount  = oOrder.SpreadComisionAmount
