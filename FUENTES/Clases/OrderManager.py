@@ -301,6 +301,7 @@ class OrderManager:
                                 if Orden.OrderState == 25:
                                     LogEvent('confirmada Orden de stoplost')
                 else: # EL TRADE ESTA CERRADO
+                    a = 1
         except:
             LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]), True)
 
@@ -308,56 +309,70 @@ class OrderManager:
     def EvaluarFlujoOrden(self, DBA, Orden):
         while Orden.OrderState not in [25, 29]:
             if Orden.OrderState    == 10: # orden ingresada local, (aun no informada al agente)
+                a = 1
                 # enviar orden
                 # actualizar orden si ese tiene los datos
                 # agregar historia orden si envio ok
             if Orden.OrderState in [11, 12]: # orden pausada, orden descartada
+                a = 1
                 # no hacer nada, dejar pasar
             if Orden.OrderState    == 13: #   orden cancelada localmente
+                a = 1
                 # solicitar cancelacion orden
                 # actualizar estado orden
                 # agregar historia orden si envio ok
             if Orden.OrderState    == 20: #   orden enviada al ajente (aun no confirmada)
+                a = 1
                 # conultar estado orden, si orden confirmada fin
                 # actualizar estado orden
                 # agregar historia orden si envio ok
             if Orden.OrderState    == 21: #   orgente reciovio orden ok, pendiente de ejecucion (puede ser limit o market)
+                a = 1
                 # conultar estado orden, si orden confirmada fin
                 # actualizar estado orden
                 # agregar historia orden si envio ok
                 # si orden ejecutada fin
             if Orden.OrderState    == 22: #   ajete  recivio orden OK, e indico que la orden se ejecuto
+                a = 1
                 # conultar estado orden, si orden confirmada fin
                 # actualizar estado orden
                 # agregar historia orden si envio ok
                 # si orden ejecutada fin
             if Orden.OrderState    == 23: #   ajete  recivio orden OK, e indico que la orden se ejecutara al darse las condiciones, ej. stoplost o compra/venta a precio limite o fecha llimite
+                a = 1
                 # conultar estado orden, si orden confirmada fin
                 # actualizar estado orden
                 # agregar historia orden si envio ok
                 # si orden ejecutada fin
             if Orden.OrderState    == 24: #   se envio una consulta de ordenes al agente, para confirmar el estado de alguna orden enviada
+                a = 1
                 # conultar estado orden, si orden confirmada fin
                 # actualizar estado orden
                 # agregar historia orden si envio ok
                 # si orden ejecutada fin
             if Orden.OrderState    == 25: #   ORDEN EJECUTADA CON EXITO Y CONFIRMADA por medio de una consulta adicional al agente
+                a = 1
                 # no hacer nada. Fin
             if Orden.OrderState    == 26: #   se envio una cancelacion de orden al ajente, pero aun no se a confirmado si se cancelo en el broker
+                a = 1
                 # conultar estado orden, si orden cancelada fin
                 # actualizar estado orden
                 # agregar historia orden si envio ok
             if Orden.OrderState    == 27: #   agente  recivio cancelacion de orden  OK, e indico que la orden se cancelo
+                a = 1
                 # conultar estado orden, si orden cancelada fin
                 # actualizar estado orden
                 # agregar historia orden si envio ok
             if Orden.OrderState    == 28: #   se envio una consulta de ordenes al agente, para confirmar el estado de la cancelacion de una orden orden enviada
+                a = 1
                 # conultar estado orden, si orden cancelada fin
                 # actualizar estado orden
                 # agregar historia orden si envio ok
             if Orden.OrderState    == 29: #   CONCELACION DE ORDEN EJECUTADA CON EXITO Y CONFIRMADA por medio de una consulta adicional al agente
+                a = 1
                 # no hacer nada. Fin
             if Orden.OrderState    == 30: #   error durante el envio de una orden al agente, se deconose si fue recivida o no, 
+                a = 1
                 # conultar estado orden, si orden confirmada fin
                 # actualizar estado orden
                 # agregar historia orden si envio ok
@@ -365,10 +380,12 @@ class OrderManager:
                 # actualizar orden si ese tiene los datos
                 # agregar historia orden si envio ok
             if Orden.OrderState    == 31: #   agente reporto error al recivir orden,la orden no se cursara, implica reenviar si es viable o coresponde
+                a = 1
                 # enviar orden
                 # actualizar orden si ese tiene los datos
                 # agregar historia orden si envio ok
             if Orden.OrderState    == 32: #   agente reporto error al intentar ejecutar la orden, orden no cursada, se desconose si se ejecutara enventuamente,
+                a = 1
                 # solicitar cancelacion orden
                 # actualizar estado orden
                 # agregar historia orden si envio ok
@@ -376,6 +393,7 @@ class OrderManager:
                 # actualizar orden si ese tiene los datos
                 # agregar historia orden si envio ok
             if Orden.OrderState    == 33: #   ERROR DURANTE EL ENVIO DE UNA CANCELACION DE ORDEN , se deconose si fue resivida y cancelada por el agente o no.
+                a = 1
                 # conultar estado orden, si orden cancelada fin
                 # actualizar estado orden
                 # agregar historia orden si envio ok
@@ -383,6 +401,7 @@ class OrderManager:
                 # actualizar estado orden
                 # agregar historia orden si envio ok
             if Orden.OrderState    == 34: #   AGENTE REPORTO ERROR DURANTE EL PEDIDO DE CANCELACION DE UNA ORDEN.
+                a = 1
                 # conultar estado orden, si orden cancelada fin
                 # actualizar estado orden
                 # agregar historia orden si envio ok
@@ -390,6 +409,7 @@ class OrderManager:
                 # actualizar estado orden
                 # agregar historia orden si envio ok
             if Orden.OrderState    == 39: #   error generico en ejecucion de la orden, puede se en cualquier e
+                a = 1
                 # conultar estado orden, si orden confirmada fin
                 # actualizar estado orden
                 # agregar historia orden si envio ok
