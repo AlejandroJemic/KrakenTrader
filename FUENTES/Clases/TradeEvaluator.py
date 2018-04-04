@@ -130,7 +130,7 @@ class TradeEvaluator:
             self.spreadSalida = spreadSalida    # % spread tentativo precio de venta
         self.deltabaseCH = self.comCompra + self.comVenta + self.spreadEntrada + self.spreadSalida     # % total de gastos poerativos por Operacion, es usado com obase para salida sin ganancias ni perdidas
     
-    def obtenerMaximo(Self, m,n):
+    def obtenerMaximo(self, m,n):
         '''
         debuelve el mayor de dos numeros
         '''

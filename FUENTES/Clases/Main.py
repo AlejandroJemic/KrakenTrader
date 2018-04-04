@@ -6,8 +6,17 @@ import sys
 from Utils import *
 from ConsultarMarquetBalance_sql import ConultarOnline
 from threading import *
+import os
 
-DBA = DBAdapter()
+path = os.getcwd()
+ROOT_path = os.sep.join(path.split(os.sep)[:-2])
+sdbInstance = 'sqlite:///'+ ROOT_path +'\BBDD\krakenTrader.db'
+DBA = DBAdapter(sdbInstance)
+
+def EnviromentSetup():
+    '''establese o crea los elementos necesatirios para que el robot funcione'''
+    LogsFolder = ROOT_path + "/LOGs"
+    SetupLogsFolder(LogsFolder)
 
 def WorkerConsultarMarquet():
 	ConultarOnline(DBA)
@@ -53,8 +62,7 @@ def WorkerTradeEvaluator():
 
 def Main():
     try:
-        DBA = DBAdapter()
-        DBA.CreateAllTables()
+        EnviromentSetup()
         threads = list()
         LogEvent('Inicio Main')
         tCM = threading.Thread(target=WorkerConsultarMarquet, name='ConsultarMarketBalance')

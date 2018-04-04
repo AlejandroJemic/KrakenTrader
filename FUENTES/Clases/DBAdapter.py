@@ -46,6 +46,7 @@ class DBAdapter:
         if dbInstance is not None:
             self.dbInstance = dbInstance
         self.engine = create_engine(self.dbInstance, connect_args={'timeout': 20})
+        self.CreateAllTables()
         self.SetStartEndTimeAuto()
 
     def SetStartEndTimeAuto(self):
@@ -53,9 +54,12 @@ class DBAdapter:
         Establese automaticamente los parametros de ventana de datos  a partir de la tabla BalanceHistory, completa
         '''
         bh = pd.read_sql(self.dbBalanceHistoryTable, con=self.engine, index_col='Time', parse_dates=True)
-        self.startSampleTime = bh.index[0] #desde
-        self.EndSampleTime   = bh.index[len(bh)-1]  #hasta
-        self.windowTime = (self.EndSampleTime - self.startSampleTime).total_seconds()/3600 #cuanto: tiempo en horas
+        if len(bh['close']) > 1:
+            self.startSampleTime = bh.index[0] #desde
+            self.EndSampleTime   = bh.index[len(bh)-1]  #hasta
+            self.windowTime = (self.EndSampleTime - self.startSampleTime).total_seconds()/3600 #cuanto: tiempo en horas
+        else:
+            self.SetStartEndTime( windowTime=0)
     
     def SetStartEndTime(self, windowTime, EndSampleTime=datetime.now()):
         '''
