@@ -5,7 +5,7 @@ import time
 import sys
 from Utils import *
 from ConsultarMarquetBalance_sql import ConultarOnline
-from  threading import *
+from threading import *
 
 DBA = DBAdapter()
 
@@ -18,7 +18,7 @@ def WorkerTradeEvaluator():
     TE = TradeEvaluator()
     while True:
         while not Lock.acquire():
-            LogEvent('No se puede bloquear. Waitng  1s...') 
+            LogEvent('No se puede bloquear. Waitng  1s...')
             time.sleep(1)
         LogEvent('Bloqueando')
         startTime = datetime.now()

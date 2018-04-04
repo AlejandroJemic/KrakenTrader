@@ -1,0 +1,95 @@
+===========================================================================================================
+
+python solid  y TDD
+
+https://dzone.com/articles/tdd-python-5-minutes
+https://twistedmatrix.com/documents/16.5.0/core/howto/trial.html
+
+https://miguelgomez.io/python/principios-solid-python/
+https://es.slideshare.net/DrTrucho/python-solid
+
+
+=====================================================================================================
+
+raise NotImplementedError("To be implemented")
+
+===========================================================================================================
+
+ver la posision donde un datetime index tiene un valor
+
+pmin = bh.index.get_loc( 'datetime')
+
+ver la posision donde el date time index tiene el minimo
+pmin = bh.index.get_loc(bh['cum_change'].argmin())
+
+===========================================================================================================
+iterar un objeto y sus valores
+
+def LogObjectValues(obj, msg=''):
+    for attr, value in obj.__dict__.iteritems():
+        LogEvent(msg)
+        LogEvent( '{a}:    {v}'.format(str(sattr), str(value)))
+		
+===========================================================================================================
+
+error
+Class 'sqlalchemy.ext.declarative.api.DeclarativeMeta' is not mapped; was a class (DTO.MyTrades) supplied where an instance was required?
+correccion 
+donde decia 
+session.expunge(MyTrades)
+colocar
+session.expunge(oTrade)
+
+===========================================================================================================
+error byte por segundo en jupyter
+
+iniciar con:
+jupyter notebook --NotebookApp.iopub_data_rate_limit=1.0e10
+
+============================================================================================================
+
+kraken assets
+
+
+"BCH":{"aclass":"currency","altname":"BCH","decimals":10,"display_decimals":5}, BITCOIN CASH
+
+"DASH":{"aclass":"currency","altname":"DASH","decimals":10,"display_decimals":5}, DASH
+
+"EOS":{"aclass":"currency","altname":"EOS","decimals":10,"display_decimals":5}, EOS, BASADOS EN TOKENS
+
+"GNO":{"aclass":"currency","altname":"GNO","decimals":10,"display_decimals":5}, GNO, BASADO EN TOKENS
+,
+"USDT":{"aclass":"currency","altname":"USDT","decimals":8,"display_decimals":4},  USDT, BASADO EN DOLAR CASI 1 A 1
+
+"XDAO":{"aclass":"currency","altname":"DAO","decimals":10,"display_decimals":3}, DAO, murio
+
+"XETC":{"aclass":"currency","altname":"ETC","decimals":10,"display_decimals":5}, ETHEREUM CLASSIC, HARD FORK DE ETHEREUM, NO MUCHO AU
+
+"XETH":{"aclass":"currency","altname":"ETH","decimals":10,"display_decimals":5}, ETHEREUM
+
+"XICN":{"aclass":"currency","altname":"ICN","decimals":10,"display_decimals":5}, ICONOMI will be an Open Fund Management platform (OFM) and we'll create two types of new financial instruments - the ICONOMI Coin Traded Fund (CTF) and the ICONOMI Coin Managed Fund (CMF).
+"XLTC":{"aclass":"currency","altname":"LTC","decimals":10,"display_decimals":5}, litelcoin , fork de bitcoin core October 7, 2011
+"XMLN":{"aclass":"currency","altname":"MLN","decimals":10,"display_decimals":5}, Melonport similar a iconomi
+"XNMC":{"aclass":"currency","altname":"NMC","decimals":10,"display_decimals":5}, Namecoin , Namecoin (NMC) is a decentralized open-source cryptocurrency forked from Bitcoin in 2011, con algunas ignovaciones
+"XREP":{"aclass":"currency","altname":"REP","decimals":10,"display_decimals":5}, Augur is an Ethereum-based decentralized prediction market that leverages the wisdom of the crowds to create a search engine for the future that runs on its own token, REP. Augur allows users to create their markets for specific questions they may have and to profit from the trading buys while allowing users to buy positive or negative shares regarding the outcome of a future event
+"XXBT":{"aclass":"currency","altname":"XBT","decimals":10,"display_decimals":5}, BITCOIN
+"XXDG":{"aclass":"currency","altname":"XDG","decimals":8,"display_decimals":2},  Dogecoin es una criptodivisa derivada de Litecoin
+"XXLM":{"aclass":"currency","altname":"XLM","decimals":8,"display_decimals":5},  Stellar Lumens, capital moderado...
+"XXMR":{"aclass":"currency","altname":"XMR","decimals":10,"display_decimals":5},
+"XXRP":{"aclass":"currency","altname":"XRP","decimals":8,"display_decimals":5},
+"XXVN":{"aclass":"currency","altname":"XVN","decimals":4,"display_decimals":2},
+"XZEC":{"aclass":"currency","altname":"ZEC","decimals":10,"display_decimals":5}, Zcash
+
+"ZCAD":{"aclass":"currency","altname":"CAD","decimals":4,"display_decimals":2},
+"ZEUR":{"aclass":"currency","altname":"EUR","decimals":4,"display_decimals":2},
+"ZJPY":{"aclass":"currency","altname":"JPY","decimals":2,"display_decimals":0},
+"ZGBP":{"aclass":"currency","altname":"GBP","decimals":4,"display_decimals":2},
+"ZKRW":{"aclass":"currency","altname":"KRW","decimals":2,"display_decimals":0},
+"ZUSD":{"aclass":"currency","altname":"USD","decimals":4,"display_decimals":2}}
+}
+
+8EYzoGoX
+
+
+
+

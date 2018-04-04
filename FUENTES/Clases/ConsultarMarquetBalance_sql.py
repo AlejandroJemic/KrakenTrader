@@ -102,8 +102,8 @@ def setBBDD():
 
 # funcion que condensa los trades del broker minuto a minuto para obtenre el volumen b y s por periodo
 def CondensatetradesOnline(DBA, lastKnowTradeTime, currentTime):
-    #leer trades history
-    startTime = datetime.now()
+    # leer trades history
+    # startTime = datetime.now()
     tradesHistoryToCondens = pd.read_sql(dbTradesHistoryTable, con=engine)
     tradesHistoryToCondens.set_index(pd.DatetimeIndex(tradesHistoryToCondens['time']),inplace=True)
     tradesHistoryToCondens.drop('time', axis=1,inplace=True)
@@ -166,8 +166,8 @@ def ConultarOnline(DBA):
     espera = 60 #segundas
     Ejecutar = True
     i = 0
-    cantEject = int(3600/espera)*4 # = 3 horas aprox
-    last = 0
+    # cantEject = int(3600 / espera) * 4 # = 3 horas aprox
+    # last = 0
     tradesQuery =  {'pair': 'XXBTZUSD'}
 
     BalanceColNames = ['Time','close','ask','bid','balanceRatio','volbuy','volsell','unbalance']

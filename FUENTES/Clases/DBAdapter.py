@@ -397,20 +397,20 @@ class DBAdapter:
         oOrder = Orders()
         try:
             cant = session.query(Orders).count()
-            if cant > 0 :
+            if cant > 0:
                 oOrder = session.query(Orders).filter(Orders.idTrade == idTrade).order_by(Orders.idOrder.desc()).first()
                 session.expunge(oOrder)
             else:
                 oOrder = None
             session.commit()
         except:
-            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]), True)
         finally:
             session.close()
         return oOrder
 
 
-    def MytradesInsertOne(self, oOrder):
+    def OrdersInsertOne(self, oOrder):
         '''
         inserta una fila en la tabla Orders a partir d eun objeto Order por medio de SQLalchemy
         '''
@@ -420,6 +420,6 @@ class DBAdapter:
             session.add(oOrder)
             session.commit()
         except:
-            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]), True)
         finally:
             session.close()
