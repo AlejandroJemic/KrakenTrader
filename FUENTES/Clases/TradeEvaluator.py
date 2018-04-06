@@ -191,7 +191,7 @@ class TradeEvaluator:
                     if (cumch[pfin] >= OCV.cumCHIncrement):
                         isUpTrend = True
                         LogEvent('isUpTrend by cumch' + str(isUpTrend))
-                    elif (cumUnbalanceP[pfin] >= (cumUnbalanceN[pfin] * -1 * 1.5)): #si existe un desbalance positivo moderado
+                    elif (cumUnbalanceP[pfin] >= (cumUnbalanceN[pfin] * -1 * 2)): #si existe un desbalance positivo moderado
                         isUpTrend = True
                         LogEvent('isUpTrend by cumUnbalanceP' + str(isUpTrend))
         except:

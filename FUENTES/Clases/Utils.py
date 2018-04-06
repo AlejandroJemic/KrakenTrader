@@ -8,7 +8,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import os
 
-
+logging.basicConfig(filename="../../LOGs/LogEventos.log", level=logging.DEBUG)
 
 def LogEvent(msg,isError = False):
     msg = '[' + threading.currentThread().getName() + ']: ' + msg 
@@ -100,4 +100,4 @@ def SetupLogsFolder(folder):
     '''establese arl directorio de logs por defecto'''
     if not os.path.exists(folder):
         os.makedirs(folder)
-        logging.basicConfig(filename=folder + "/LogEventos.log", level=logging.DEBUG)
+    
