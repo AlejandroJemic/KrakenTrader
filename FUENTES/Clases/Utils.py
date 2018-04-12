@@ -34,7 +34,7 @@ def SendMail(SUBJECT, msg, BODY):
     # Credentials (if needed) for sending the mail
     TO = 'a.jemic@gmail.com'
     FROM ='a.jemic@gmail.com'
-    password = "cuarzo-777"
+    password = ""
     # Create message container - the correct MIME type is multipart/alternative here!
     MESSAGE = MIMEMultipart('alternative')
     MESSAGE['subject'] = SUBJECT
