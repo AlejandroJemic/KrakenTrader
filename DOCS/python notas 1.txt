@@ -1,3 +1,31 @@
+deshabilitar modos standby sleep y hibernate
+
+c:\windows\system32\powercfg.exe /change -disk-timeout-ac 0
+c:\windows\system32\powercfg.exe /change -disk-timeout-dc 0
+c:\windows\system32\powercfg.exe /change -standby-timeout-ac 0
+c:\windows\system32\powercfg.exe /change -standby-timeout-dc 0
+c:\windows\system32\powercfg.exe /change -hibernate-timeout-ac 0
+c:\windows\system32\powercfg.exe /change -hibernate-timeout-dc 0
+c:\windows\system32\powercfg.exe /x -standby-timeout-ac 0
+c:\windows\system32\powercfg.exe /x -standby-timeout-dc 0
+
+
+https://superuser.com/questions/368022/how-to-disable-sleep-mode-via-cmd
+
+powercfg.exe /h off
+
+powercfg /q >poweroptions.txt
+buscar los GUID para :
+	Balanced
+	Power buttons and lid
+	Lid close action
+
+ejecutar para cada uno:
+	Powercfg –SETACVALUEINDEX [put power scheme GUID here] [put subgroup GUID here] [put power setting GUID here] 000
+	Powercfg –SETDCVALUEINDEX [put power scheme GUID here] [put subgroup GUID here] [put power setting GUID here] 000
+
+reiniciar PC
+
 ===========================================================================================================
 
 python solid  y TDD
@@ -87,9 +115,4 @@ kraken assets
 "ZKRW":{"aclass":"currency","altname":"KRW","decimals":2,"display_decimals":0},
 "ZUSD":{"aclass":"currency","altname":"USD","decimals":4,"display_decimals":2}}
 }
-
-8EYzoGoX
-
-
-
 

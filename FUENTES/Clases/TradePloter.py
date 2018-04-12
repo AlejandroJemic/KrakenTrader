@@ -153,13 +153,13 @@ class TradePloter:
                 n = i+1
                 row = axes[i]
                 dOpen = myTrades.openTime[n]
-                iniPos = BalanceHistory.index.get_loc(dOpen)-5
+                iniPos = BalanceHistory.index.get_loc(dOpen)-25
                 iniMoment = BalanceHistory.index[iniPos] 
 
                 sDesc = myTrades.tradeDescription[n]
 
                 dClose = myTrades.closeTime[n]
-                endPos = BalanceHistory.index.get_loc(dClose)+5
+                endPos = BalanceHistory.index.get_loc(dClose)+25
                 maxPos  = len(BalanceHistory)
                 if endPos >= maxPos:
                     endPos = maxPos-1
