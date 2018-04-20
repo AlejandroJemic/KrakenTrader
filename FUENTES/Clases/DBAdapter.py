@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import time
 from datetime import datetime, timedelta
-from sqlalchemy import create_engine, MetaData, Table, Column, DateTime, Float, String, Integer
+from sqlalchemy import create_engine, MetaData, Table, Column, DateTime, Float, String, Integer, Boolean
 from sqlalchemy.orm import sessionmaker
 from DTO import MyTrades
 from TradeEvaluator import TradeValues
@@ -137,7 +137,9 @@ class DBAdapter:
                      Column('closingP', Float, nullable=True), 
                      Column('deltaP', Float, nullable=True), 
                      Column('Profit', Float, nullable=True),
-                     Column('Profit_Gastos', Float, nullable=True))
+                     Column('Profit_Gastos', Float, nullable=True),
+                     Column('Maximo', Float, nullable=True),
+                     Column('inBase', Boolean, nullable=True))
             # Implement the creation
             metadata.create_all()
             print('creada la table' + self.dbMyTradesTable)
@@ -150,7 +152,7 @@ class DBAdapter:
                      Column('price', Float, nullable=True),
                      Column('countb', Float, nullable=True),
                      Column('volb', Float, nullable=True),
-                     Column('counts', Float, nullable=True), # 
+                     Column('counts', Float, nullable=True),  
                      Column('vols', Float, nullable=True))
             # Implement the creation
             metadata.create_all()
@@ -332,6 +334,23 @@ class DBAdapter:
             oTrade.deltaP = oTradeValues.deltaP
             oTrade.Profit = oTradeValues.Profit
             oTrade.Profit_Gastos = oTradeValues.Profit_Gastos
+            oTrade.Maximo = oTradeValues.maximo
+            oTrade.inBase = oTradeValues.inBase
+            session.commit()
+        except:
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
+        finally:
+            session.close()
+
+    def MytradesUpdateinBase(self, oTradeValues):
+        '''
+        actualiza en BBDD una fila en la tabla MyTrades EL ESTADO INBASE a partir de un objeto TradeValues por medio de SQLalchemy
+        '''
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+        try:
+            oTrade = session.query(MyTrades).filter(MyTrades.id == oTradeValues.idTrade).first()
+            oTrade.inBase = oTradeValues.inBase
             session.commit()
         except:
             LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
