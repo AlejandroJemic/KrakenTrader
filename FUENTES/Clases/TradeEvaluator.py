@@ -91,7 +91,7 @@ class OpenCloseValues:
     waitPeriodsOutBase = 60        # cuando la operacion esta abierta fuera de base, se espera periodos=waitPeriodsOutBase * waitFactorOutBase
     waitFactorOutBase = 3
     cumCHIncrement = 2.5           # % de cambio acumuladoa para apertura de operacion si existe tendencia positiva lenta
-    deltaCHSaveProfit =  8         # % de cambio acumulada que marga un cierre y reapertura de la operacion para salvar ganancias
+    deltaCHSaveProfit =  2.2        # % de cambio acumulada que marga un cierre y reapertura de la operacion para salvar ganancias
     UpTrendWaitPeriods = 20        # cantidad de periodos a esperar para abrir  por  tendencia en alsa
        
 ##################################################################################################################
@@ -191,7 +191,7 @@ class TradeEvaluator:
                     if (cumch[pfin] >= OCV.cumCHIncrement):
                         isUpTrend = True
                         LogEvent('isUpTrend by cumch' + str(isUpTrend))
-                    elif (cumUnbalanceP[pfin] >= (cumUnbalanceN[pfin] * -1 * 2)): #si existe un desbalance positivo moderado
+                    elif (cumUnbalanceP[pfin] >= (cumUnbalanceN[pfin] * -1 * 5)): #si existe un desbalance positivo moderado
                         isUpTrend = True
                         LogEvent('isUpTrend by cumUnbalanceP' + str(isUpTrend))
         except:

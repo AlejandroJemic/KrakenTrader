@@ -155,25 +155,28 @@ class TradePloter:
                 dOpen = myTrades.openTime[n]
                 iniPos = BalanceHistory.index.get_loc(dOpen)-25
                 iniMoment = BalanceHistory.index[iniPos] 
-
                 sDesc = myTrades.tradeDescription[n]
-
                 dClose = myTrades.closeTime[n]
-                endPos = BalanceHistory.index.get_loc(dClose)+25
-                maxPos  = len(BalanceHistory)
-                if endPos >= maxPos:
-                    endPos = maxPos-1
+                maxPos  = len(BalanceHistory)-1
+                try:
+                    if  dClose.to_pydatetime() < datetime(2000, 1, 1, 0, 0, 0):
+                        endPos = maxPos -1 
+                    else:
+                        endPos = BalanceHistory.index.get_loc(dClose)+25
+                    if endPos >= maxPos:
+                        endPos = maxPos-1
+                    endMoment = BalanceHistory.index[endPos] 
+                    df =  BalanceHistory[(BalanceHistory.index >= iniMoment) & (BalanceHistory.index <= endMoment)]
 
-                endMoment = BalanceHistory.index[endPos] 
-
-                df =  BalanceHistory[(BalanceHistory.index >= iniMoment) & (BalanceHistory.index <= endMoment)]
-
-                #calcular %CH, %CH Acum , SMA %CH Acum
-                #df['change'] = df['close'].pct_change(periods=1)*100
-                #df['cum_change'] = df['change'].cumsum()
-                #df['SMA03_cum_change'] = df['cum_change'].rolling(3).mean()
-                #df['SMA12_cum_change'] = df['cum_change'].rolling(12).mean()
-                self.plotTrade(row, df,dOpen, dClose, sDesc,myTrades.openingCH[n],myTrades.closingCH[n])
+                    #calcular %CH, %CH Acum , SMA %CH Acum
+                    #df['change'] = df['close'].pct_change(periods=1)*100
+                    #df['cum_change'] = df['change'].cumsum()
+                    #df['SMA03_cum_change'] = df['cum_change'].rolling(3).mean()
+                    #df['SMA12_cum_change'] = df['cum_change'].rolling(12).mean()
+                    self.plotTrade(row, df,dOpen, dClose, sDesc,myTrades.openingCH[n],myTrades.closingCH[n])
+                except:
+                    dbg.set_trace()
+                    pass
             fig.autofmt_xdate() 
             plt.legend() 
             plt.tight_layout() 
