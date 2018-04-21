@@ -150,7 +150,7 @@ class TradeEvaluator:
 
     def restarGastos (self,s):
         '''
-        a partir d euna serie profit, devuelve una nueba serie profit-menos gastos acumulados
+        a partir d euna serie profit, devuelve una nueva serie profit-menos gastos acumulados
         '''
         l = []
         for i in range(len(s)):
@@ -264,8 +264,9 @@ class TradeEvaluator:
                         T = self.OpenTrade(OCV, DBA , T, tc, s, cumch, deltaTargetCH, deltaStopLose, i)
                         
                 if (T.isOpen == True):
-                    T = self.EvaluateClosing(T, OCV, s, deltaStopLose, bh,  cumch, i)
-                    
+                    T = self.EvaluateClosing(T, OCV, s, sma03, sma12, deltaStopLose, bh,  cumch, i)
+                    if (T.inBase == True): # si supera gastos actualiza estado en bbdd
+                        self.UpdateTradeInBase(T, DBA)
                     if (T.isOpen == False) or ((i == len(s)-1) & (T.isOpen == True)): #si cerro operacion o es el ultimo periodo y alguna operacion sigue abierta
 
                         self.CloseTrade(T, s, bh, tc, i, DBA)
@@ -341,8 +342,9 @@ class TradeEvaluator:
                 if (T.isOpen == True):
                     self.sAction = self.sAction + '. Evaluating Closing'
                     self.iAction = 4
-                    T = self.EvaluateClosing(T, OCV, s, deltaStopLose, bh,  cumch, Evalpos)
-
+                    T = self.EvaluateClosing(T, OCV, s, sma03, sma12, deltaStopLose, bh,  cumch, Evalpos)
+                    if (T.inBase == True): # si supera gastos actualiza estado en bbdd
+                        self.UpdateTradeInBase(T, DBA)
                     if (T.isOpen == False): #si cerro operacion
                         self.CloseTrade(T, s, bh, tc, Evalpos, DBA)
 
@@ -395,7 +397,7 @@ class TradeEvaluator:
             T.OpeningTypeID = 6
         return T
       
-    def EvaluateClosing(self, T, OCV, s, deltaStopLose, bh,  cumch, i):
+    def EvaluateClosing(self, T, OCV, s, sma03, sma12, deltaStopLose, bh,  cumch, i):
         '''
         evalua cuando cerrar una operacion
         '''
@@ -417,7 +419,7 @@ class TradeEvaluator:
         if bh.cum_change[i] >= T.baseCH: #nivel de perdidas operacionales superado
             T.inBase = True
         if T.inBase == True:
-            if (currentCumCH <= T.maximoTolerado):
+            if (currentCumCH <= T.maximoTolerado): # cierre por cumch < a maximo tolerado
                 T.isOpen = False
                 T.sCloseCond = "Maximo AT {0} %CH, Tolerado AT {1} %CH".format(round(T.maximo,2), round(T.maximoTolerado,2))
                 T.ClosingTypeID = 1
@@ -431,6 +433,11 @@ class TradeEvaluator:
                 T.isOpen = False
                 T.sCloseCond = "elapsed {0} times without goals | IN BASE".format(OCV.waitPeriods*OCV.waitFactor)
                 T.ClosingTypeID = 3
+                LogEvent(T.sCloseCond)
+            elif (cumch[i] <= sma03[i]) &  (sma03[i] <= sma12[i]): # cierre por cumch < mma3 y mma3 < mma12
+                T.isOpen = False
+                T.sCloseCond = "CH {0} lees than MMA12 | IN BASE".format(round(cumch[i],2))
+                T.ClosingTypeID = 6
                 LogEvent(T.sCloseCond)
         
         else: #nivel de perdidas operacionales no se logro 
@@ -497,8 +504,8 @@ class TradeEvaluator:
 
     def CloseTrade(self, T, s, bh, tc, Evalpos, DBA):
         '''
-        Encapsula las acciones realizadas al cerrer una operacionales
-        retorna un objeto del tipo TradeValues nuevo
+        Encapsula las acciones realizadas al cerrar una operación
+        y retorna un objeto del tipo TradeValues nuevo para continuarl el porceso
         '''
         T = self.SetClosing( T, s, bh, tc, Evalpos)
         self.sAction = self.sAction + '. Trade Closed'
@@ -562,6 +569,7 @@ class TradeEvaluator:
         T.closingCH    = bh.cum_change[i]
         T.closingP     = bh['close'][i]
         T.ClosePos     = i
+        
             
         if T.openingCH >= T.closingCH:
             T.deltaCH      = T.closingCH - T.openingCH
@@ -600,12 +608,22 @@ class TradeEvaluator:
             DBA.MytradesInsertOne(T, DBA.dbMyTradesTable)
         except:
             LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
+
+    def UpdateTradeInBase(self, T, DBA):
+        '''
+        actualiza el estado inBase de un Trade cuando a superado el nivel de gastos operativos.
+        '''
+        try:
+            DBA.MytradesUpdateinBase(T)
+        except:
+            LogEvent("Unexpected error: {0}".format(sys.exc_info()[0]),True)
         
     def UpdateClosedTread(self, T, DBA):
         '''
         actualiza una operacion cerrada a la lista de operacioens calculadas
         '''
         try:
+            self.myTrades = DBA.ReadMyTrades() 
             newTrade = [T.idTrade,T.openTime,T.closeTime,T.sDesc,T.OpeningTypeID,T.ClosingTypeID,T.openingCH,T.baseCH,T.targetCH,T.stopLoseCH, T.TotalLoseCH,T.closingCH,T.deltaCH, T.openingP,T.baseP,T.targetP,T.stopLoseP,T.TotalLoseP,T.closingP,T.deltaP, T.Profit, T.Profit_Gastos]              
             self.myTrades.loc[len(self.myTrades)] = newTrade
             self.myTrades['Profit'] = self.myTrades['deltaCH'].cumsum()
@@ -663,7 +681,7 @@ class TradeEvaluator:
             T.Profit = oTrade.Profit 
             T.Profit_Gastos = oTrade.Profit_Gastos 
             T.openPos = s.index.get_loc(str(T.openTime))        # indice del tiempo de apertura
-            T.inBase = False                                    # flag operacion sobre gastos operacionales, el metodo EvaluateClosing lo valida y lo setea despues
+            T.inBase = oTrade.inBase                            # flag operacion sobre gastos operacionales, el metodo EvaluateClosing lo valida y lo setea despues
             if T.closeTime <= T.openTime:                       # significa que no tiene fecha de cierre, y tomo el default 1900-01-01
                 T.isOpen = True                                 # flag operacion abierta/cerrada
             else:

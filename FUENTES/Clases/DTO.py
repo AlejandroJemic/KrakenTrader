@@ -1,7 +1,7 @@
 # DTO v1.0 17-12-217
 # incluyo clases DTOs para sqlalquemy
 
-from sqlalchemy import (create_engine, Column, DateTime, Float, Integer, String, BigInteger, Text)
+from sqlalchemy import (create_engine, Column, DateTime, Float, Integer, String, BigInteger, Text, Boolean)
 from sqlalchemy.ext.declarative import declarative_base
 
 dbInstance = 'sqlite:///../../BBDD/krakenTeader.db'
@@ -65,6 +65,8 @@ class MyTrades(Base):
     deltaP           = Column(Float)
     Profit           = Column(Float)
     Profit_Gastos    = Column(Float)
+    Maximo           = Column(Float)
+    inBase           = Column(Boolean)
 
     def __init__(self, oTradeValues, TableName):
         self.index            = oTradeValues.idTrade
@@ -90,6 +92,8 @@ class MyTrades(Base):
         self.deltaP           = oTradeValues.deltaP
         self.Profit           = oTradeValues.Profit
         self.Profit_Gastos    = oTradeValues.Profit_Gastos
+        self.Maximo           = oTradeValues.maximo
+        self.inBase           = oTradeValues.inBase
 
 
 class Orders(Base):
