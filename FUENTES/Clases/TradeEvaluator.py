@@ -26,7 +26,9 @@ import sys
 from datetime import datetime, timedelta
 from DTO import MyTrades
 from Utils import *
-
+import IPython.core.debugger
+dbg = IPython.core.debugger.Pdb()
+#dbg.set_trace() #colocar dondo punto interrupcion
 ##################################################################################################################3
 #    class TradeValues:                                                                         ##################3
 ##################################################################################################################3
@@ -116,7 +118,7 @@ class TradeEvaluator:
     sAction  = 'No action'
     iAction = 0
     
-    cols = ['id', 'openTime', 'closeTime', 'tradeDescription', 'OpeningTypeID', 'ClosingTypeID', 'openingCH', 'baseCH', 'targetCH', 'stopLoseCH', 'TotalLoseCH', 'closingCH', 'deltaCH', 'openingP', 'baseP', 'targetP', 'stopLoseP', 'TotalLoseP', 'closingP', 'deltaP', 'Profit', 'Profit_Gastos']     
+    cols = ['index','id', 'openTime', 'closeTime', 'tradeDescription', 'OpeningTypeID', 'ClosingTypeID', 'openingCH', 'baseCH', 'targetCH', 'stopLoseCH', 'TotalLoseCH', 'closingCH', 'deltaCH', 'openingP', 'baseP', 'targetP', 'stopLoseP', 'TotalLoseP', 'closingP', 'deltaP', 'Profit', 'Profit_Gastos', 'Maximo', 'inBase']     
     myTrades = pd.DataFrame(columns=cols)
     
     def __init__(self,comCompra = None, comVenta = None, spreadEntrada = None, spreadSalida = None):
@@ -148,13 +150,14 @@ class TradeEvaluator:
             su = su + serie[i]
         return su
 
-    def restarGastos (self,s):
+    def restarGastos (self,se):
         '''
         a partir d euna serie profit, devuelve una nueva serie profit-menos gastos acumulados
         '''
         l = []
-        for i in range(len(s)):
-            l.append((s[i] - (self.deltabaseCH*(i+1))))
+        #dbg.set_trace() #colocar dondo punto interrupcion
+        for i in range(len(se)):
+            l.append((se[i+1] - (self.deltabaseCH*(i+1))))
         return l
 
     def EvaluateTrend(self, bh, OCV):
@@ -623,9 +626,38 @@ class TradeEvaluator:
         actualiza una operacion cerrada a la lista de operacioens calculadas
         '''
         try:
+            
             self.myTrades = DBA.ReadMyTrades() 
-            newTrade = [T.idTrade,T.openTime,T.closeTime,T.sDesc,T.OpeningTypeID,T.ClosingTypeID,T.openingCH,T.baseCH,T.targetCH,T.stopLoseCH, T.TotalLoseCH,T.closingCH,T.deltaCH, T.openingP,T.baseP,T.targetP,T.stopLoseP,T.TotalLoseP,T.closingP,T.deltaP, T.Profit, T.Profit_Gastos]              
-            self.myTrades.loc[len(self.myTrades)] = newTrade
+            # newTrade = [T.idTrade,T.idTrade,T.openTime,T.closeTime,T.sDesc,T.OpeningTypeID,T.ClosingTypeID,T.openingCH,T.baseCH,T.targetCH,T.stopLoseCH, T.TotalLoseCH,T.closingCH,T.deltaCH, T.openingP,T.baseP,T.targetP,T.stopLoseP,T.TotalLoseP,T.closingP,T.deltaP, T.Profit, T.Profit_Gastos, T.maximo, T.inBase]              
+            # self.myTrades.loc[len(self.myTrades)] = newTrade
+            
+            dNewTrade = {
+            'index':T.idTrade,
+            'id':T.idTrade,
+            'openTime':T.openTime,
+            'closeTime':T.closeTime,
+            'tradeDescription':T.sDesc,
+            'OpeningTypeID':T.OpeningTypeID,
+            'ClosingTypeID':T.ClosingTypeID,
+            'openingCH':T.openingCH,
+            'baseCH':T.baseCH,
+            'targetCH':T.targetCH,
+            'stopLoseCH':T.stopLoseCH,
+            'TotalLoseCH':T.TotalLoseCH,
+            'closingCH':T.closingCH,
+            'deltaCH':T.deltaCH,
+            'openingP':T.openingP,
+            'baseP':T.baseP,
+            'targetP':T.targetP,
+            'stopLoseP':T.stopLoseP,
+            'TotalLoseP':T.TotalLoseP,
+            'closingP':T.closingP,
+            'deltaP':T.deltaP,
+            'Profit':T.Profit,
+            'Profit_Gastos':T.Profit_Gastos,
+            'Maximo':T.maximo,
+            'inBase':T.inBase}
+            self.myTrades.append(dNewTrade, ignore_index=True)
             self.myTrades['Profit'] = self.myTrades['deltaCH'].cumsum()
             self.myTrades['Profit_Gastos'] = self.restarGastos(self.myTrades['Profit'])
 

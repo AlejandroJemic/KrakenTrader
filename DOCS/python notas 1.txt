@@ -155,7 +155,12 @@ rmdir							Alias for `!rmdir`
 %%writefile
 
 ===========================================================================================================
+import IPython.core.debugger
+dbg = IPython.core.debugger.Pdb()
+#dbg.set_trace() #colocar dondo punto interrupcion
+
 dbg.set_trace() Debugger Commandos:
+
 
 h(elp)		lista todos los comandos
 h [command] ayuda del comando
